@@ -33,6 +33,8 @@ class ImageHandler(base.BaseMigrationHandler):
         Return the resulting resource id.
         """
         source_image = self._source_session.get_image(resource_id)
+        if not source_image:
+            raise exception.NotFound(f"Image not found: {resource_id}")
 
         # TODO: pass the project name if the image belongs to a different tenant.
         # owner_project_name = source_image.location.project.name

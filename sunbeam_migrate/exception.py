@@ -17,3 +17,7 @@ class Invalid(SunbeamMigrateException):
 
 class InvalidInput(Invalid):
     msg_fmt = "Invalid input provided."
+
+
+class NotFound(SunbeamMigrateException):
+    msg_fmt = "Resource not found."
