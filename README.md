@@ -163,14 +163,14 @@ $ sunbeam-migrate cleanup-source --resource-type=image
 Creating and migrating Barbican secrets and containers:
 
 ```
-$ openstack secret store --name root-ca-cert -s certificate --file ~/ca/rootca.crt
-$ openstack secret store --name root-ca-key -s private --file ~/ca/rootca.key
+$ cert_ref=`openstack secret store --name root-ca-cert -s certificate --file ~/ca/rootca.crt | grep "Secret href" | awk '{print $5}'`
+$ key_ref=`openstack secret store --name root-ca-key -s private --file ~/ca/rootca.key | grep "Secret href" | awk '{print $5}'`
 
 $ openstack secret container create \
   --name root-ca \
   --type certificate \
-  --secret "certificate=http://10.8.99.203/openstack-barbican/v1/secrets/ee818210-2ff5-4a4f-9153-69c3c83b4003" \
-  --secret "private_key=http://10.8.99.203/openstack-barbican/v1/secrets/569d75d1-4798-4891-87b7-764b81f403f4"
+  --secret "certificate=$cert_ref" \
+  --secret "private_key=$key_ref"
 
 $ sunbeam-migrate start-batch --resource-type=secret-container --filter "owner-id:516ddfe184c84f77889b33f027716e89" --include-dependencies
 2025-11-17 15:41:47,195 INFO Initiating secret-container migration, resource id: http://10.8.99.203/openstack-barbican/v1/containers/85e2dee5-0b8c-4d7e-a1b7-a634788d49d7
