@@ -21,3 +21,7 @@ class InvalidInput(Invalid):
 
 class NotFound(SunbeamMigrateException):
     msg_fmt = "Resource not found."
+
+
+class MultipleResourcesFound(SunbeamMigrateException):
+    msg_fmt = "Multiple resources found."

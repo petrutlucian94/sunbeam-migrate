@@ -36,6 +36,14 @@ class SunbeamMigrateConfig(BaseModel):
     )
     image_transfer_chunk_size: int = 32 * 1024 * 1024  # 32MB
 
+    def load_config(self, path: Path):
+        """Load the configuration from the specified file."""
+        with path.open() as f:
+            cfg_yaml = yaml.safe_load(f)
+
+            updated = self.model_validate({**self.model_dump(), **cfg_yaml})
+            self.__dict__.update(updated.__dict__)
+
 
 _CONFIG: SunbeamMigrateConfig | None = None
 
@@ -50,12 +58,4 @@ def get_config() -> SunbeamMigrateConfig:
 
 def load_config(path: Path):
     """Load the configuration from the specified file."""
-    global _CONFIG
-    with path.open() as f:
-        cfg_yaml = yaml.safe_load(f)
-        loaded_config = get_config()
-
-        updated = loaded_config.model_validate(
-            {**loaded_config.model_dump(), **cfg_yaml}
-        )
-        _CONFIG.__dict__.update(updated.__dict__)
+    get_config().load_config(path)

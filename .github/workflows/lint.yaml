@@ -10,6 +10,24 @@ permissions:
   contents: read
 
 jobs:
+  fmt:
+    name: Code formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install tox
+        run: sudo apt-get install -y tox
+      - name: Fmt
+        run: |
+          tox -e fmt
+
   pep8:
     name: Coding style checks (pep8)
     runs-on: ubuntu-latest
@@ -43,7 +61,7 @@ jobs:
       - name: Install tox
         run: sudo apt-get install -y tox
       - name: Install uv
-        run:  sudo snap install --classic astral-uv
+        uses: astral-sh/setup-uv@v6
       - name: mypy
         run: |
           tox -e mypy

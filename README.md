@@ -192,6 +192,7 @@ $ sunbeam-migrate list
 | 50921223-33c2-44be-b3f5-17e28f92632d | barbican |      secret      | completed | 569d75d1-4798-4891-87b7-764b81f403f4 | cda7e8eb-a993-4dd4-8302-cc2b83096f65 |
 | e45171a5-fcf1-41a2-9e23-83a74b50116e | barbican | secret-container | completed | 85e2dee5-0b8c-4d7e-a1b7-a634788d49d7 | c02de39b-d379-4b4f-9e93-3392fb5bdf22 |
 +--------------------------------------+----------+------------------+-----------+--------------------------------------+--------------------------------------+
+```
 
 ## TODOs
 
@@ -200,4 +201,51 @@ $ sunbeam-migrate list
     * --cascade -> migrate component resources (e.g. network -> subnet)
     * (implemented) --include-dependencies -> e.g. subnet -> network, instance -> volume, etc
 * Add new resource handlers.
-* Implement some tests.
+* Implement manager unit tests
+* Consider having a "mappings.yaml" file, allowing a different resource from the destination
+  cloud to be used instead of an exact copy of the source resource.
+  For example, we might want to use a different set of volume types, flavors or networks,
+  matching the specifics of the destination cloud.
+  Example:
+  ```
+  volume-flavors:
+    - source-id: <uuid>
+      destination-id: <uuid>
+  networks:
+    - source-id: <uuid>
+      destination-id: <uuid>
+  ```
+* Instead of dry runs, have migration plans similar to Terraform plans. The user could then
+  see the resources that are going to be migrated, trigger the migration plan and then check
+  the migration status for the specified plan.
+  The resource dependencies could be modeled through a tree.
+
+## Functional tests
+
+`sunbeam_migrate/tests/integration` contains integration tests that exercise every supported
+migration handler.
+
+The tests receive a configuration file similar to the standard `SUNBEAM_MIGRATE_CONFIG` file,
+having a few additional test specific settings.
+
+Use the following to invoke the tests:
+
+```
+$ export SUNBEAM_MIGRATE_CONFIG=~/migrate-config-test.yaml
+$ cat > $SUNBEAM_MIGRATE_CONFIG <<EOF
+log_level: info
+cloud_config_file: /home/ubuntu/cloud-config.yaml
+source_cloud_name: source-admin
+destination_cloud_name: destination-admin
+database_file: /home/ubuntu/.local/share/sunbeam-migrate/sqlite.db
+skip_project_purge: false
+EOF
+
+$ tox -e integration
+```
+
+Use the `-k` parameter to specify which test(s) to run:
+
+```
+tox -e integration -- -k test_migrate_image_and_cleanup
+```

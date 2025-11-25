@@ -116,6 +116,7 @@ class SunbeamMigrationManager:
         handler = factory.get_migration_handler(resource_type)
         associated_resources = handler.get_associated_resources(resource_id)
 
+        # TODO: let's define a Pydantic structure instead of this ugly list of tuples.
         migrated_resources: list[tuple[str, str, str]] = []
         pending_resources: list[tuple[str, str]] = []
 
