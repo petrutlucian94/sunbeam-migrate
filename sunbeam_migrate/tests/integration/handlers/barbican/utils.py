@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2025 - Canonical Ltd
 # SPDX-License-Identifier: Apache-2.0
 
+import base64
+
 from sunbeam_migrate.tests.integration import utils as test_utils
 from sunbeam_migrate.utils import barbican_utils
 
@@ -10,7 +12,7 @@ def create_test_secret(request, session, binary=False, **kwargs):
     kwargs["name"] = secret_name
 
     if binary:
-        secret_payload = b"\x01%s-payload\x02" % secret_name
+        secret_payload = b"\x01%s-payload\x02" % secret_name.encode()
         kwargs["payload"] = base64.b64encode(secret_payload).decode()
         kwargs["payload_content_type"] = "application/octet-stream"
         kwargs["payload_content_encoding"] = "base64"

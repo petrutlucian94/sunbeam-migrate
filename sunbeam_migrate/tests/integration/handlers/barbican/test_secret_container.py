@@ -20,7 +20,9 @@ def test_migrate_secret_container_batch(
     source_secrets = []
     source_containers = []
     for idx in range(container_count):
-        secret_1 = barbican_test_utils.create_test_secret(request, test_source_session)
+        secret_1 = barbican_test_utils.create_test_secret(
+            request, test_source_session, binary=True
+        )
         secret_2 = barbican_test_utils.create_test_secret(request, test_source_session)
         container = barbican_test_utils.create_test_secret_container(
             request, test_source_session, [secret_1, secret_2]
