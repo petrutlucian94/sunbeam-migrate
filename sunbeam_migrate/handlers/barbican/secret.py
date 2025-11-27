@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: 2025 - Canonical Ltd
 # SPDX-License-Identifier: Apache-2.0
 
+import base64
+
 from sunbeam_migrate import config, constants, exception
 from sunbeam_migrate.handlers import base
+from sunbeam_migrate.utils import barbican_utils
 
 CONF = config.get_config()
 
@@ -25,9 +28,6 @@ class SecretHandler(base.BaseMigrationHandler):
         """Describe the implementation status."""
         return constants.IMPL_PARTIAL
 
-    def _parse_barbican_url(self, secret_url) -> str:
-        return (secret_url or "").split("/")[-1]
-
     def perform_individual_migration(
         self,
         resource_id: str,
@@ -42,8 +42,9 @@ class SecretHandler(base.BaseMigrationHandler):
 
         Return the resulting resource id.
         """
-        source_secret = self._source_session.key_manager.get_secret(resource_id)
-        if not source_secret:
+        secret_id = barbican_utils.parse_barbican_url(resource_id)
+        source_secret = self._source_session.key_manager.get_secret(secret_id)
+        if not (source_secret and source_secret.id):
             raise exception.NotFound(f"Secret not found: {resource_id}")
 
         # TODO: pass the project name if needed.
@@ -64,6 +65,22 @@ class SecretHandler(base.BaseMigrationHandler):
             value = getattr(source_secret, field, None)
             if value:
                 kwargs[field] = value
+
+        # We'll deduce the content type and encoding if not provided.
+        if (
+            isinstance(source_secret.payload, bytes)
+            and not source_secret.payload_content_encoding
+        ):
+            kwargs["payload_content_encoding"] = "base64"
+            kwargs["payload"] = base64.b64encode(source_secret.payload).decode()
+        if not source_secret.payload_content_type:
+            if (
+                isinstance(source_secret.payload, bytes)
+                or source_secret.payload_content_encoding == "base64"
+            ):
+                kwargs["payload_content_type"] = "application/octet-stream"
+            else:
+                kwargs["payload_content_type"] = "text/plain"
 
         destination_secret = self._destination_session.key_manager.create_secret(
             **kwargs
@@ -89,5 +106,5 @@ class SecretHandler(base.BaseMigrationHandler):
         return resource_ids
 
     def _delete_resource(self, resource_id: str, openstack_session):
-        secret_id = self._parse_barbican_url(resource_id)
+        secret_id = barbican_utils.parse_barbican_url(resource_id)
         openstack_session.key_manager.delete_secret(secret_id)

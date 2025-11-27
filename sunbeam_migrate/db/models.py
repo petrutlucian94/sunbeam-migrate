@@ -33,9 +33,12 @@ class BaseModel(object):
         session.refresh(self)
         return self.id
 
-    def to_dict(self) -> dict[str, typing.Any]:
+    def to_dict(self, serializable=True) -> dict[str, typing.Any]:
         """Convert the model to dict."""
         _dict = {col.name: getattr(self, col.name) for col in self.__table__.columns}  # type: ignore [attr-defined]
+        for key, value in _dict.items():
+            if isinstance(value, datetime.datetime):
+                _dict[key] = value.isoformat()
         return _dict
 
     def __eq__(self, other) -> bool:

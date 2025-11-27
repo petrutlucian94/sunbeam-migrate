@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 - Canonical Ltd
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import logging
 import os
 import random
@@ -45,3 +46,32 @@ def check_migrate(config_path: Path, command: list[str]) -> str:
     """Run the sunbeam-migrate command and capture the output."""
     command = ["sunbeam-migrate", "--config", str(config_path)] + command
     return subprocess.check_output(command, text=True)
+
+
+def get_migrations(
+    config_path: Path,
+    resource_type: str | None = None,
+    source_id: str | None = None,
+) -> list[dict]:
+    # We avoid using the db directly, exercising the commands instead.
+    command = ["list", "-f", "json"]
+    if source_id:
+        command += ["--source-id", source_id]
+    if resource_type:
+        command += ["--resource-type", resource_type]
+
+    migrations_json = check_migrate(config_path, command) or "[]"
+    return json.loads(migrations_json) or []
+
+
+def get_destination_resource_id(
+    config_path: Path,
+    resource_type: str,
+    source_id: str,
+) -> str:
+    migrations = get_migrations(config_path, resource_type, source_id)
+    if not migrations:
+        raise ValueError(
+            "Migrated {resource_type} not found, source resource: {source_id}."
+        )
+    return migrations[-1]["destination_id"]

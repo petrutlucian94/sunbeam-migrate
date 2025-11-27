@@ -3,6 +3,7 @@
 
 from sunbeam_migrate import config, constants, exception
 from sunbeam_migrate.handlers import base
+from sunbeam_migrate.utils import barbican_utils
 
 CONF = config.get_config()
 
@@ -29,18 +30,15 @@ class SecretContainerHandler(base.BaseMigrationHandler):
         """Get a list of associated resource types."""
         return ["secret"]
 
-    def _parse_barbican_url(self, secret_url) -> str:
-        return (secret_url or "").split("/")[-1]
-
     def get_associated_resources(self, resource_id: str) -> list[tuple[str, str]]:
         """Get a list of associated resources.
 
         Each entry will be a tuple containing the resource type and
         the resource id.
         """
-        container_id = self._parse_barbican_url(resource_id)
+        container_id = barbican_utils.parse_barbican_url(resource_id)
         container = self._source_session.key_manager.get_container(container_id)
-        if not container:
+        if not (container and container.id):
             raise exception.NotFound(f"Secret not found: {resource_id}")
 
         associated_resources = []
@@ -63,7 +61,7 @@ class SecretContainerHandler(base.BaseMigrationHandler):
 
         Return the resulting resource id.
         """
-        source_container_id = self._parse_barbican_url(resource_id)
+        source_container_id = barbican_utils.parse_barbican_url(resource_id)
         source_container = self._source_session.key_manager.get_container(
             source_container_id
         )
@@ -115,5 +113,5 @@ class SecretContainerHandler(base.BaseMigrationHandler):
         return resource_ids
 
     def _delete_resource(self, resource_id: str, openstack_session):
-        container_id = self._parse_barbican_url(resource_id)
+        container_id = barbican_utils.parse_barbican_url(resource_id)
         openstack_session.key_manager.delete_container(container_id)

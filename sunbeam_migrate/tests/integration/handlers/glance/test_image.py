@@ -19,7 +19,9 @@ def _check_migrated_image(source_image, destination_image):
     for field in ["name", "container_format", "disk_format", "checksum", "size"]:
         source_attr = getattr(source_image, field)
         dest_attr = getattr(destination_image, field)
-        assert source_attr and source_attr == dest_attr, f"{field} attribute mismatch"
+        assert source_attr == dest_attr, (
+            f"{field} attribute mismatch: {source_attr} != {dest_attr}"
+        )
 
 
 def test_migrate_image(

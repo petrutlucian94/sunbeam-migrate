@@ -760,18 +760,6 @@ extend-ignore = ["E203"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "sunbeam_migrate/tests/*" = [
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D107",
-    "D415",
-    "E501",
-    "N802",
-    "N803",
-    "N806",
     "S",    # Disable bandit rules in tests
 ]
 "**/__init__.py" = ["D104"]
