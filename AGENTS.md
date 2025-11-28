@@ -52,3 +52,16 @@
    [("volume", "source-volume-id", "destination-volume-id")],
    where "destination-volume-id" is the uuid of the migrated volume reported by the
    destination cloud.
+
+## Other rules
+
+- AI agents should not generate unit or integration tests yet unless asked to.
+- When modifying markdown tables, the columns should be properly aligned.
+- If an agent regenerates a file, avoid appending the new content, but instead replace
+  the file contents. We don't want duplicate definitions.
+- Empty __init__.py files should not contain license headers.
+- Use Linux style line endings.
+- All public methods should include docstrings. Subclasses may reuse the ones
+  from the parent class.
+- Agents should honor the ruff coding style rules as per tox.ini and
+  pyproject.toml.
