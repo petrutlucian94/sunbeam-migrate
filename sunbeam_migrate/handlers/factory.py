@@ -12,6 +12,8 @@ MIGRATION_HANDLERS = {
     "secret-container": "sunbeam_migrate.handlers.barbican.secret_container.SecretContainerHandler",
     # Glance handlers
     "image": "sunbeam_migrate.handlers.glance.image.ImageHandler",
+    # Nova handlers
+    "flavor": "sunbeam_migrate.handlers.nova.flavor.FlavorHandler",
     # Neutron handlers
     "network": "sunbeam_migrate.handlers.neutron.network.NetworkHandler",
     "subnet": "sunbeam_migrate.handlers.neutron.subnet.SubnetHandler",

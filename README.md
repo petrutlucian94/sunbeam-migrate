@@ -46,19 +46,20 @@ Get migration handler capabilities:
 
 ```
 $ sunbeam-migrate capabilities
-+-------------------------------------------------------------------------------------------------------------+
-|                                              Migration handlers                                             |
-+----------+---------------------+-----------------------+---------------------------+------------------------+
-| Service  |    Resource type    | Member resource types | Associated resource types | Batch resource filters |
-+----------+---------------------+-----------------------+---------------------------+------------------------+
-| Barbican |        secret       |           -           |             -             |        owner_id        |
-| Barbican |   secret-container  |           -           |           secret          |        owner_id        |
-|  Glance  |        image        |           -           |             -             |        owner_id        |
-| Neutron  |       network       |         subnet        |             -             |        owner_id        |
-| Neutron  |    security-group   |  security-group-rule  |             -             |        owner_id        |
-| Neutron  | security-group-rule |           -           |       security-group      |        owner_id        |
-| Neutron  |        subnet       |           -           |          network          |        owner_id        |
-+----------+---------------------+-----------------------+---------------------------+------------------------+
++----------------------------------------------------------------------------------------------------------------+
+|                                                Migration handlers                                              |
++----------+---------------------+-----------------------+---------------------------+---------------------------+
+| Service  |    Resource type    | Member resource types | Associated resource types |  Batch resource filters   |
++----------+---------------------+-----------------------+---------------------------+---------------------------+
+| Barbican |        secret       |           -           |             -             |        owner_id           |
+| Barbican |   secret-container  |           -           |           secret          |        owner_id           |
+|  Glance  |        image        |           -           |             -             |        owner_id           |
+|   Nova   |       flavor        |           -           |             -             |            -              |
+| Neutron  |       network       |         subnet        |             -             |        owner_id           |
+| Neutron  |    security-group   |  security-group-rule  |             -             |        owner_id           |
+| Neutron  | security-group-rule |           -           |       security-group      |        owner_id           |
+| Neutron  |        subnet       |           -           |          network          |        owner_id           |
++----------+---------------------+-----------------------+---------------------------+---------------------------+
 
 $ sunbeam-migrate capabilities --resource-type=subnet
 +--------------------------------------+
