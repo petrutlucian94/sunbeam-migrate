@@ -1,0 +1,9 @@
+[run]
+branch = True
+parallel = True
+source = sunbeam_migrate
+concurrency = multiprocessing
+patch = subprocess
+
+[report]
+show_missing = True

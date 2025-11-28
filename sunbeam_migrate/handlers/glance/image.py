@@ -51,14 +51,70 @@ class ImageHandler(base.BaseMigrationHandler):
         #     owner_project_name
         # )
 
-        # TODO: apply the other image properties.
+        # Basic properties
+        fields = [
+            "name",
+            "container_format",
+            "disk_format",
+            "min_disk",
+            "min_ram",
+            "protected",
+        ]
+        # Extended properties
+        fields += [
+            "is_hidden",
+            "is_protected",
+            "hash_algo",
+            "hash_value",
+            "visibility",
+            "architecture",
+            "hypervisor_type",
+            "instance_type_rxtx_factor",
+            "instance_uuid",
+            "needs_config_drive",
+            "kernel_id",
+            "os_distro",
+            "os_version",
+            "needs_secure_boot",
+            "os_shutdown_timeout",
+            "ramdisk_id",
+            "vm_mode",
+            "hw_cpu_sockets",
+            "hw_cpu_cores",
+            "hw_cpu_threads",
+            "hw_disk_bus",
+            "hw_cpu_policy",
+            "hw_cpu_thread_policy",
+            "hw_rng_model",
+            "hw_machine_type",
+            "hw_scsi_model",
+            "hw_serial_port_count",
+            "hw_video_model",
+            "hw_video_ram",
+            "hw_watchdog_action",
+            "os_command_line",
+            "hw_vif_model",
+            "is_hw_vif_multiqueue_enabled",
+            "is_hw_boot_menu_enabled",
+            "vmware_adaptertype",
+            "vmware_ostype",
+            "has_auto_disk_config",
+            "os_type",
+            "os_admin_user",
+            "hw_qemu_guest_agent",
+            "os_require_quiesce",
+        ]
+        kwargs = {}
+        for field in fields:
+            value = getattr(source_image, field, None)
+            if value:
+                kwargs[field] = value
+
         destination_image = self._destination_session.create_image(
-            source_image.name,
-            container=source_image.container_format,
-            disk_format=source_image.disk_format,
             data=self._chunked_image_reader(
                 source_image, CONF.image_transfer_chunk_size
             ),
+            **kwargs,
         )
 
         # Refresh the image to get all the information, including checksums.

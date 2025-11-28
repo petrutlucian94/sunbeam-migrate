@@ -10,6 +10,10 @@ def _create_test_image(session):
         container="bare",
         disk_format="raw",
         data=bytes([1] * 16 * 1024),
+        os_distro="cirros",
+        properties={
+            "custom-property": "custom-value",
+        },
     )
     # Refresh image information.
     return session.get_image(image.id)
