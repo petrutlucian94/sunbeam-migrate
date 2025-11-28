@@ -34,7 +34,6 @@ def _show_all_migration_handlers():
         "Member resource types",
         "Associated resource types",
         "Batch resource filters",
-        "Ready",
     ]
     table.sortby = "Service"
     for resource_type, handler in factory.get_all_handlers().items():
@@ -45,7 +44,6 @@ def _show_all_migration_handlers():
                 _user_friendly_list(handler.get_member_resource_types()),
                 _user_friendly_list(handler.get_associated_resource_types()),
                 _user_friendly_list(handler.get_supported_resource_filters()),
-                handler.get_implementation_status(),
             ]
         )
     print(table)
@@ -76,5 +74,4 @@ def _show_migration_handler(resource_type: str):
             _user_friendly_list(handler.get_supported_resource_filters()),
         ]
     )
-    table.add_row(["Readiness", handler.get_implementation_status()])
     print(table)

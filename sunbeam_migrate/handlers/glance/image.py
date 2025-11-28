@@ -3,7 +3,7 @@
 
 import hashlib
 
-from sunbeam_migrate import config, constants, exception
+from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
 
 CONF = config.get_config()
@@ -22,10 +22,6 @@ class ImageHandler(base.BaseMigrationHandler):
         These filters can be specified when initiating batch migrations.
         """
         return ["owner_id"]
-
-    def get_implementation_status(self) -> str:
-        """Describe the implementation status."""
-        return constants.IMPL_PARTIAL
 
     def perform_individual_migration(
         self,

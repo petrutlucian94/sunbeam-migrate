@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 - Canonical Ltd
 # SPDX-License-Identifier: Apache-2.0
 
-from sunbeam_migrate import config, constants, exception
+from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
 
 CONF = config.get_config()
@@ -27,10 +27,6 @@ class SecurityGroupHandler(base.BaseMigrationHandler):
         Associated resources must be migrated first.
         """
         return []
-
-    def get_implementation_status(self) -> str:
-        """Describe the implementation status."""
-        return constants.IMPL_PARTIAL
 
     def get_associated_resources(self, resource_id: str) -> list[tuple[str, str]]:
         """Security groups have no prerequisite resources."""

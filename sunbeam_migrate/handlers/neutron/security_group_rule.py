@@ -6,7 +6,7 @@ import re
 
 from openstack import exceptions as openstack_exc
 
-from sunbeam_migrate import config, constants, exception
+from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
 
 CONF = config.get_config()
@@ -26,10 +26,6 @@ class SecurityGroupRuleHandler(base.BaseMigrationHandler):
         These filters can be specified when initiating batch migrations.
         """
         return ["owner_id"]
-
-    def get_implementation_status(self) -> str:
-        """Describe the implementation status."""
-        return constants.IMPL_PARTIAL
 
     def get_associated_resource_types(self) -> list[str]:
         """Security group rules depend on their security group."""

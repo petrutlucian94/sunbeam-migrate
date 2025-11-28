@@ -7,7 +7,7 @@ import os
 import openstack
 from openstack import exceptions as openstack_exc
 
-from sunbeam_migrate import config, constants, exception
+from sunbeam_migrate import config, exception
 
 CONF = config.get_config()
 
@@ -108,10 +108,6 @@ class BaseMigrationHandler(abc.ABC):
         These filters can be specified when initiating batch migrations.
         """
         return []
-
-    def get_implementation_status(self) -> str:
-        """Describe the implementation status."""
-        return constants.IMPL_PLACEHOLDER
 
     def _get_openstack_session(self, cloud_name: str):
         if not CONF.cloud_config_file:

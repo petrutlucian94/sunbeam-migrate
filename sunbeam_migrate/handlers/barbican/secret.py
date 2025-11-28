@@ -3,7 +3,7 @@
 
 import base64
 
-from sunbeam_migrate import config, constants, exception
+from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
 from sunbeam_migrate.utils import barbican_utils
 
@@ -23,10 +23,6 @@ class SecretHandler(base.BaseMigrationHandler):
         These filters can be specified when initiating batch migrations.
         """
         return ["owner_id"]
-
-    def get_implementation_status(self) -> str:
-        """Describe the implementation status."""
-        return constants.IMPL_PARTIAL
 
     def perform_individual_migration(
         self,

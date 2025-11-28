@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 - Canonical Ltd
 # SPDX-License-Identifier: Apache-2.0
 
-from sunbeam_migrate import config, constants, exception
+from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
 
 CONF = config.get_config()
@@ -20,10 +20,6 @@ class SubnetHandler(base.BaseMigrationHandler):
         These filters can be specified when initiating batch migrations.
         """
         return ["owner_id"]
-
-    def get_implementation_status(self) -> str:
-        """Describe the implementation status."""
-        return constants.IMPL_PARTIAL
 
     def get_associated_resource_types(self) -> list[str]:
         """Get a list of associated resource types.
