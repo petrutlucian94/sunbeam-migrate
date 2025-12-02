@@ -44,19 +44,16 @@ class SunbeamMigrationManager:
         )
 
         if include_members:
-            member_resources = self._migrate_member_resources(
+            migrated_member_resources = self._migrate_member_resources(
                 handler=handler,
                 resource_id=resource_id,
                 cleanup_source=cleanup_source,
                 include_dependencies=include_dependencies,
                 include_members=include_members,
             )
-            # Resolve destination IDs for migrated member resources
-            migrated_member_resources = self._get_migrated_member_resources(
-                member_resources
-            )
             try:
                 handler.connect_member_resources_to_parent(
+                    parent_resource_type="",
                     parent_resource_id=migration.destination_id,
                     migrated_member_resources=migrated_member_resources,
                 )
@@ -206,7 +203,7 @@ class SunbeamMigrationManager:
         cleanup_source: bool,
         include_dependencies: bool,
         include_members: bool,
-    ) -> list[tuple[str, str]]:
+    ) -> list[tuple[str, str, str]]:
         """Handle member resource migration logic."""
         member_resources = handler.get_member_resources(resource_id)
         for member_resource_type, member_resource_id in member_resources:
@@ -259,16 +256,6 @@ class SunbeamMigrationManager:
                     ex,
                 )
 
-        return member_resources
-
-    def _get_migrated_member_resources(
-        self, member_resources: list[tuple[str, str]]
-    ) -> list[tuple[str, str, str]]:
-        """Resolve destination IDs for migrated member resources.
-
-        :param member_resources: List of (resource_type, source_id) tuples.
-        :return: List of (resource_type, source_id, destination_id) tuples.
-        """
         migrated_member_resources: list[tuple[str, str, str]] = []
         for resource_type, resource_id in member_resources:
             # Check for completed migrations
@@ -277,7 +264,7 @@ class SunbeamMigrationManager:
                 resource_type=resource_type,
                 status=constants.STATUS_COMPLETED,
             )
-            if migrations and migrations[0].destination_id:
+            if migrations:
                 migrated_member_resources.append(
                     (resource_type, resource_id, migrations[0].destination_id)
                 )

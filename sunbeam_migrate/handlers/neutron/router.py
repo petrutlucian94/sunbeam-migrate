@@ -36,7 +36,7 @@ class RouterHandler(base.BaseMigrationHandler):
         if not source_router:
             raise exception.NotFound(f"Router not found: {resource_id}")
 
-        associated_resources = []
+        associated_resources: list[tuple[str, str]] = []
 
         external_gateway_info = (
             getattr(source_router, "external_gateway_info", None) or {}
@@ -145,6 +145,7 @@ class RouterHandler(base.BaseMigrationHandler):
 
     def connect_member_resources_to_parent(
         self,
+        parent_resource_type: str,
         parent_resource_id: str | None,
         migrated_member_resources: list[tuple[str, str, str]],
     ):
@@ -218,18 +219,11 @@ class RouterHandler(base.BaseMigrationHandler):
         src_net_id = external_gateway_info.get("network_id")
 
         if src_net_id:
-            external_gateway_network_id = None
-            for (
-                assoc_type,
-                assoc_source_id,
-                assoc_dest_id,
-            ) in migrated_associated_resources:
-                if assoc_type == "network" and assoc_source_id == src_net_id:
-                    external_gateway_network_id = assoc_dest_id
-                    new_external_gateway_info["network_id"] = (
-                        external_gateway_network_id
-                    )
-                    break
+            external_gateway_network_id = self._get_associated_resource_destination_id(
+                "network",
+                src_net_id,
+                migrated_associated_resources,
+            )
             if not external_gateway_network_id:
                 raise exception.NotFound(
                     "Couldn't find migrated associated network for router "
@@ -237,6 +231,7 @@ class RouterHandler(base.BaseMigrationHandler):
                     "Please migrate it first or rerun the command with "
                     "'--include-dependencies'."
                 )
+            new_external_gateway_info["network_id"] = external_gateway_network_id
 
         original_fixed_ips = external_gateway_info.get("external_fixed_ips") or []
         new_fixed_ips = []
@@ -248,15 +243,11 @@ class RouterHandler(base.BaseMigrationHandler):
             if not src_subnet_id:
                 continue
 
-            dest_subnet_id: str | None = None
-            for (
-                assoc_type,
-                assoc_source_id,
-                assoc_dest_id,
-            ) in migrated_associated_resources:
-                if assoc_type == "subnet" and assoc_source_id == src_subnet_id:
-                    dest_subnet_id = assoc_dest_id
-                    break
+            dest_subnet_id = self._get_associated_resource_destination_id(
+                "subnet",
+                src_subnet_id,
+                migrated_associated_resources,
+            )
             if not dest_subnet_id:
                 raise exception.NotFound(
                     "Couldn't find migrated associated subnet for router "

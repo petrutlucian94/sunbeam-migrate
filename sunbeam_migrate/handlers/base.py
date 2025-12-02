@@ -114,6 +114,7 @@ class BaseMigrationHandler(abc.ABC):
 
     def connect_member_resources_to_parent(
         self,
+        parent_resource_type: str,
         parent_resource_id: str | None,
         migrated_member_resources: list[tuple[str, str, str]],
     ):
