@@ -204,7 +204,7 @@ class BaseMigrationHandler(abc.ABC):
         We did consider having a migration handler API for auxiliary resources, however
         the idea was dismissed due to the increased complexity.
         """
-        self._manager = False
+        self._manager = manager
 
     @property
     def manager(self):

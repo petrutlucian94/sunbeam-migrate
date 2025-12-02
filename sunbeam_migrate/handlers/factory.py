@@ -11,6 +11,7 @@ MIGRATION_HANDLERS = {
     "secret": "sunbeam_migrate.handlers.barbican.secret.SecretHandler",
     "secret-container": "sunbeam_migrate.handlers.barbican.secret_container.SecretContainerHandler",
     # Cinder handles
+    "volume": "sunbeam_migrate.handlers.cinder.volume.VolumeHandler",
     "volume-type": "sunbeam_migrate.handlers.cinder.volume_type.VolumeTypeHandler",
     # Glance handlers
     "image": "sunbeam_migrate.handlers.glance.image.ImageHandler",
