@@ -112,6 +112,22 @@ class BaseMigrationHandler(abc.ABC):
         """
         return []
 
+    def connect_member_resources_to_parent(
+        self,
+        parent_resource_id: str | None,
+        migrated_member_resources: list[tuple[str, str, str]],
+    ):
+        """Connect member resources to the parent resource.
+
+        This is called after member resources have been migrated.
+
+        :param parent_resource_id: The destination ID of the parent resource.
+        :param migrated_member_resources: A list of tuples describing
+            member resources that have been migrated.
+            Format: (resource_type, source_id, destination_id)
+        """
+        pass
+
     def _get_openstack_session(self, cloud_name: str):
         if not CONF.cloud_config_file:
             raise exception.InvalidInput("No cloud config provided.")

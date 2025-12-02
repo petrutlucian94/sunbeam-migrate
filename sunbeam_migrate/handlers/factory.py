@@ -18,6 +18,7 @@ MIGRATION_HANDLERS = {
     # Nova handlers
     "flavor": "sunbeam_migrate.handlers.nova.flavor.FlavorHandler",
     # Neutron handlers
+    "router": "sunbeam_migrate.handlers.neutron.router.RouterHandler",
     "network": "sunbeam_migrate.handlers.neutron.network.NetworkHandler",
     "subnet": "sunbeam_migrate.handlers.neutron.subnet.SubnetHandler",
     "security-group": "sunbeam_migrate.handlers.neutron.security_group.SecurityGroupHandler",
