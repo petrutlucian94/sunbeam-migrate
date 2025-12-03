@@ -12,6 +12,7 @@ from sunbeam_migrate.cmd import capabilities as capabilities_cmd
 from sunbeam_migrate.cmd import cleanup_source as cleanup_source_cmd
 from sunbeam_migrate.cmd import delete as delete_cmd
 from sunbeam_migrate.cmd import list as list_cmd
+from sunbeam_migrate.cmd import register_external as register_external_cmd
 from sunbeam_migrate.cmd import restore as restore_cmd
 from sunbeam_migrate.cmd import show as show_cmd
 from sunbeam_migrate.cmd import start as start_cmd
@@ -57,6 +58,7 @@ def main():
     cli.add_command(delete_cmd.delete_migrations)
     cli.add_command(restore_cmd.restore_migrations)
     cli.add_command(cleanup_source_cmd.cleanup_migration_sources)
+    cli.add_command(register_external_cmd.register_external)
 
     cli()
 

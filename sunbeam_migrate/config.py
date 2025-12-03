@@ -35,6 +35,15 @@ class SunbeamMigrateConfig(BaseModel):
         os.path.expandvars("$HOME/.local/share/sunbeam-migrate/sqlite.db")
     )
     image_transfer_chunk_size: int = 32 * 1024 * 1024  # 32MB
+    # Preserve the volume type when migrating volumes. Defaults to "false" for
+    # increased compatibility. If enabled, the volume types will be migrated and
+    # used when transferring volumes. Manually created types may be registered
+    # using the "register-external" command.
+    preserve_volume_type: bool | None = False
+    # Preserve the volume availability zone when migrating volumes.
+    # Defaults to "false" for increased compatibility.
+    preserve_volume_availability_zone: bool | None = False
+    volume_upload_timeout: int = 1800
 
     def load_config(self, path: Path):
         """Load the configuration from the specified file."""

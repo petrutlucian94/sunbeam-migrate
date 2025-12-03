@@ -17,6 +17,7 @@ from sunbeam_migrate.db import api, models
 @click.option("--source-id", help="Filter by source resource id.")
 @click.option("--archived", is_flag=True, help="Only show archived migrations.")
 @click.option("--include-archived", is_flag=True, help="Include archived migrations.")
+@click.option("--external", is_flag=True, help="Only show external migrations.")
 @click.option(
     "--source-removed",
     is_flag=True,
@@ -43,6 +44,7 @@ def list_migrations(
     source_id: str,
     archived: bool,
     include_archived: bool,
+    external: bool,
     source_removed: bool,
     exclude_source_removed: bool,
 ):
@@ -58,6 +60,8 @@ def list_migrations(
         filters["source_id"] = source_id
     if archived:
         filters["archived"] = True
+    if external:
+        filters["external"] = True
 
     if source_removed and exclude_source_removed:
         raise click.ClickException(

@@ -748,6 +748,7 @@ select = [
 ]
 ignore = [
     "F821",
+    "D212",
     "S105", # hardcoded password checks - likely to generate false positives
     "S107", # same as above
     "S401", # import subprocess - not necessarily a security issue; this plugin is mainly used for penetration testing workflow

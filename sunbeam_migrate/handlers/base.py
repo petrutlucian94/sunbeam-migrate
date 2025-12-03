@@ -15,6 +15,9 @@ CONF = config.get_config()
 class BaseMigrationHandler(abc.ABC):
     """Base migration class."""
 
+    def __init__(self, *args, **kwargs):
+        self._manager = None
+
     @abc.abstractmethod
     def get_service_type(self) -> str:
         """Get the service type for this type of resource."""
@@ -189,3 +192,25 @@ class BaseMigrationHandler(abc.ABC):
             "Please migrate it first or rerun the command with '--include-dependencies'"
             % (resource_type, source_id, migrated_associated_resources)
         )
+
+    def set_manager(self, manager):
+        """Pass a manager reference.
+
+        Some migration handlers need a back reference to the migration manager
+        to transfer auxiliary resources. For example, volume migrations can consist in
+        uploading the volume to Glance, migrating the Glance image and then recreating
+        the volume on the destination side using the migrated image.
+
+        We did consider having a migration handler API for auxiliary resources, however
+        the idea was dismissed due to the increased complexity.
+        """
+        self._manager = manager
+
+    @property
+    def manager(self):
+        """Access the migration manager."""
+        if not self._manager:
+            raise exception.SunbeamMigrateException(
+                "Missing migration manager reference."
+            )
+        return self._manager

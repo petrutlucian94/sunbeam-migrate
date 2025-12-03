@@ -6,13 +6,20 @@ import logging
 from sunbeam_migrate import config, constants, exception
 from sunbeam_migrate.db import api as db_api
 from sunbeam_migrate.db import models
-from sunbeam_migrate.handlers import factory
+from sunbeam_migrate.handlers import base, factory
 
 CONFIG = config.get_config()
 LOG = logging.getLogger()
 
 
 class SunbeamMigrationManager:
+    def _get_migration_handler(
+        self, resource_type: str | None
+    ) -> base.BaseMigrationHandler:
+        handler = factory.get_migration_handler(resource_type)
+        handler.set_manager(self)
+        return handler
+
     def perform_individual_migration(
         self,
         resource_type: str,
@@ -22,7 +29,7 @@ class SunbeamMigrationManager:
         include_members: bool = False,
     ) -> models.Migration:
         """Migrate the specified resource."""
-        handler = factory.get_migration_handler(resource_type)
+        handler = self._get_migration_handler(resource_type)
 
         if not resource_id:
             raise exception.InvalidInput("No resource id specified.")
@@ -197,7 +204,7 @@ class SunbeamMigrationManager:
         resource_type: str,
         resource_id: str,
     ) -> dict[str, list[tuple]]:
-        handler = factory.get_migration_handler(resource_type)
+        handler = self._get_migration_handler(resource_type)
         associated_resources = handler.get_associated_resources(resource_id)
 
         # TODO: let's define a Pydantic structure instead of this ugly list of tuples.
@@ -231,7 +238,7 @@ class SunbeamMigrationManager:
         include_members: bool = False,
     ):
         """Migrate multiple resources that match the specified filters."""
-        handler = factory.get_migration_handler(resource_type)
+        handler = self._get_migration_handler(resource_type)
 
         resource_ids = handler.get_source_resource_ids(resource_filters)
 
@@ -274,7 +281,7 @@ class SunbeamMigrationManager:
             raise exception.InvalidInput("Missing source id.")
 
         try:
-            handler = factory.get_migration_handler(migration.resource_type)
+            handler = self._get_migration_handler(migration.resource_type)
             handler.delete_source_resource(migration.source_id)
             migration.source_removed = True
             migration.save()
