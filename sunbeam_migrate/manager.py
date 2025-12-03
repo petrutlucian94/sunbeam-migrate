@@ -205,6 +205,7 @@ class SunbeamMigrationManager:
         include_members: bool,
     ) -> list[tuple[str, str, str]]:
         """Handle member resource migration logic."""
+        migrated_member_resources: list[tuple[str, str, str]] = []
         member_resources = handler.get_member_resources(resource_id)
         for member_resource_type, member_resource_id in member_resources:
             # Check if this resource is already migrated or being migrated
@@ -241,13 +242,25 @@ class SunbeamMigrationManager:
                 member_resource_id,
             )
             try:
-                self.perform_individual_migration(
+                migrated_member = self.perform_individual_migration(
                     member_resource_type,
                     member_resource_id,
                     cleanup_source=cleanup_source,
                     include_dependencies=include_dependencies,
                     include_members=include_members,
                 )
+                if (
+                    migrated_member.resource_type
+                    and migrated_member.source_id
+                    and migrated_member.destination_id
+                ):
+                    migrated_member_resources.append(
+                        (
+                            migrated_member.resource_type,
+                            migrated_member.source_id,
+                            migrated_member.destination_id,
+                        )
+                    )
             except Exception as ex:
                 LOG.error(
                     "Failed to migrate member resource %s %s: %r",
@@ -256,25 +269,6 @@ class SunbeamMigrationManager:
                     ex,
                 )
 
-        migrated_member_resources: list[tuple[str, str, str]] = []
-        for resource_type, resource_id in member_resources:
-            # Check for completed migrations
-            migrations = db_api.get_migrations(
-                source_id=resource_id,
-                resource_type=resource_type,
-                status=constants.STATUS_COMPLETED,
-            )
-            if migrations:
-                migrated_member_resources.append(
-                    (resource_type, resource_id, migrations[0].destination_id)
-                )
-            else:
-                LOG.debug(
-                    "Member resource %s %s not yet completed, "
-                    "skipping connection to parent",
-                    resource_type,
-                    resource_id,
-                )
         return migrated_member_resources
 
     def _get_associated_resources(
