@@ -796,5 +796,5 @@ max-complexity = 15
 plugins = "sqlalchemy.ext.mypy.plugin"
 
 [[tool.mypy.overrides]]
-module = ["watcherclient.*"]
+module = ["manilaclient.*"]
 follow_untyped_imports = true

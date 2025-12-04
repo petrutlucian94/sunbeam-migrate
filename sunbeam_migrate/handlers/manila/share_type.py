@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
-from typing import Any
 
 from manilaclient import exceptions as manila_exc
 
@@ -48,47 +47,45 @@ class ShareTypeHandler(base.BaseMigrationHandler):
             raise exception.NotFound(f"Share type not found: {resource_id}")
 
         dest_manila = client_utils.get_manila_client(self._destination_session)
-        # Check if share type with same name already exists
-        try:
-            existing_types = dest_manila.share_types.list(
-                search_opts={"name": source_type.name}
+        # Check if a share type with same name already exists.
+        existing_types = [
+            share_type
+            for share_type in dest_manila.share_types.list()
+            if share_type.name == source_type.name
+        ]
+        if existing_types:
+            existing_type = existing_types[0]
+            LOG.warning(
+                "Share type already exists: %s %s",
+                existing_type.id,
+                existing_type.name,
             )
-            if existing_types:
-                existing_type = existing_types[0]
-                LOG.warning(
-                    "Share type already exists: %s %s",
-                    existing_type.id,
-                    existing_type.name,
-                )
-                return existing_type.id
-        except Exception:
-            # If listing fails, continue with creation
-            pass
+            return existing_type.id
 
-        type_kwargs = self._build_type_kwargs(source_type)
-        destination_type = dest_manila.share_types.create(**type_kwargs)
+        # For some reason we get a string instead of a boolean...
+        dhss = source_type.required_extra_specs["driver_handles_share_servers"] in (
+            "true",
+            "True",
+            True,
+        )
+        snapshot_support = source_type.extra_specs.get("snapshot_support") in (
+            "true",
+            "True",
+            True,
+        )
+        destination_type = dest_manila.share_types.create(
+            name=source_type.name,
+            spec_driver_handles_share_servers=dhss,
+            spec_snapshot_support=snapshot_support,
+            is_public=source_type.is_public,
+        )
 
         extra_specs = getattr(source_type, "extra_specs", None)
         if extra_specs:
-            dest_manila.share_types.set_keys(destination_type, extra_specs)
+            destination_type.set_keys(extra_specs)
 
         # TODO: handle type access
         return destination_type.id
-
-    def _build_type_kwargs(self, source_type: Any) -> dict[str, Any]:
-        kwargs: dict[str, Any] = {}
-
-        fields = [
-            "is_public",
-            "description",
-            "name",
-        ]
-        for field in fields:
-            value = getattr(source_type, field, None)
-            if value not in (None, {}):
-                kwargs[field] = value
-
-        return kwargs
 
     def get_source_resource_ids(self, resource_filters: dict[str, str]) -> list[str]:
         """Returns a list of resource ids based on the specified filters.
@@ -108,7 +105,6 @@ class ShareTypeHandler(base.BaseMigrationHandler):
             manila = client_utils.get_manila_client(openstack_session)
             manila.share_types.delete(resource_id)
         except manila_exc.NotFound:
-            # Resource already deleted or doesn't exist
             pass
         except Exception:
             # TODO: stop suppressing this once we include a flag along with

@@ -18,12 +18,12 @@ def create_test_share_type(
     share_type_kwargs = {
         "name": name or test_utils.get_test_resource_name(),
         "is_public": True,
-        "description": "sunbeam-migrate share type test",
+        "spec_driver_handles_share_servers": False,
     }
     share_type_kwargs.update(overrides)
     share_type = manila.share_types.create(**share_type_kwargs)
     if extra_specs:
-        manila.share_types.set_keys(share_type, extra_specs)
+        share_type.set_keys(extra_specs)
 
     # Refresh the share type information.
     return manila.share_types.get(share_type.id)
@@ -33,7 +33,6 @@ def check_migrated_share_type(source_share_type, destination_share_type):
     fields = [
         "name",
         "is_public",
-        "description",
         "extra_specs",
     ]
     for field in fields:
@@ -47,5 +46,4 @@ def delete_share_type(session, share_type_id: str):
     try:
         manila.share_types.delete(share_type_id)
     except manila_exc.NotFound:
-        # Already deleted or doesn't exist
         pass
