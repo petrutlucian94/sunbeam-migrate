@@ -4,6 +4,9 @@
 import logging
 from typing import Any
 
+from manilaclient import client as manila_client
+from manilaclient import exceptions as manila_exc
+
 from sunbeam_migrate import exception
 from sunbeam_migrate.handlers import base
 
@@ -24,6 +27,11 @@ class ShareTypeHandler(base.BaseMigrationHandler):
         """
         return []
 
+    def _get_manila_client(self, openstack_session):
+        """Get a manilaclient instance from an OpenStack SDK session."""
+        # Use the session's auth to create a manila client
+        return manila_client.Client("2", session=openstack_session.auth)
+
     def perform_individual_migration(
         self,
         resource_id: str,
@@ -38,37 +46,36 @@ class ShareTypeHandler(base.BaseMigrationHandler):
 
         Return the resulting resource id.
         """
-        source_type = self._source_session.shared_file_system.get_share_type(
-            resource_id
-        )
-        if not source_type:
+        source_manila = self._get_manila_client(self._source_session)
+        try:
+            source_type = source_manila.share_types.get(resource_id)
+        except manila_exc.NotFound:
             raise exception.NotFound(f"Share type not found: {resource_id}")
 
-        existing_type = self._destination_session.shared_file_system.find_share_type(
-            source_type.name, ignore_missing=True
-        )
-        if existing_type:
-            # TODO: we might consider moving those checks on the manager side
-            # and have a consistent approach across handlers.
-            LOG.warning(
-                "Share type already exists: %s %s",
-                existing_type.id,
-                existing_type.name,
+        dest_manila = self._get_manila_client(self._destination_session)
+        # Check if share type with same name already exists
+        try:
+            existing_types = dest_manila.share_types.list(
+                search_opts={"name": source_type.name}
             )
-            return existing_type.id
+            if existing_types:
+                existing_type = existing_types[0]
+                LOG.warning(
+                    "Share type already exists: %s %s",
+                    existing_type.id,
+                    existing_type.name,
+                )
+                return existing_type.id
+        except Exception:
+            # If listing fails, continue with creation
+            pass
 
         type_kwargs = self._build_type_kwargs(source_type)
-        destination_type = (
-            self._destination_session.shared_file_system.create_share_type(
-                **type_kwargs
-            )
-        )
+        destination_type = dest_manila.share_types.create(**type_kwargs)
 
         extra_specs = getattr(source_type, "extra_specs", None)
         if extra_specs:
-            self._destination_session.shared_file_system.update_share_type_extra_specs(
-                destination_type, **extra_specs
-            )
+            dest_manila.share_types.set_keys(destination_type, extra_specs)
 
         # TODO: handle type access
         return destination_type.id
@@ -95,16 +102,19 @@ class ShareTypeHandler(base.BaseMigrationHandler):
         """
         self._validate_resource_filters(resource_filters)
 
+        source_manila = self._get_manila_client(self._source_session)
         resource_ids: list[str] = []
-        for share_type in self._source_session.shared_file_system.share_types():
+        for share_type in source_manila.share_types.list():
             resource_ids.append(share_type.id)
         return resource_ids
 
     def _delete_resource(self, resource_id: str, openstack_session):
         try:
-            openstack_session.shared_file_system.delete_share_type(
-                resource_id, ignore_missing=True
-            )
+            manila = self._get_manila_client(openstack_session)
+            manila.share_types.delete(resource_id)
+        except manila_exc.NotFound:
+            # Resource already deleted or doesn't exist
+            pass
         except Exception:
             # TODO: stop suppressing this once we include a flag along with
             # the resource dependencies, specifying which ones can be deleted.
