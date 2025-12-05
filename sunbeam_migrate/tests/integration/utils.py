@@ -10,6 +10,8 @@ from pathlib import Path
 
 import openstack
 
+from sunbeam_migrate import constants
+
 LOG = logging.getLogger()
 
 
@@ -25,7 +27,10 @@ def get_openstack_session(cloud_config_path: Path, cloud_name: str):
         LOG.info(
             "Connecting to %s cloud. Config: %s.", cloud_name, str(cloud_config_path)
         )
-        session = openstack.connect(cloud=cloud_name)
+        session = openstack.connect(
+            cloud=cloud_name,
+            share_api_version=constants.MANILA_MICROVERSION,
+        )
     finally:
         if previous_env_var:
             os.environ["OS_CLIENT_CONFIG_FILE"] = previous_env_var

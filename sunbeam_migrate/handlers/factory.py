@@ -15,6 +15,9 @@ MIGRATION_HANDLERS = {
     "volume-type": "sunbeam_migrate.handlers.cinder.volume_type.VolumeTypeHandler",
     # Glance handlers
     "image": "sunbeam_migrate.handlers.glance.image.ImageHandler",
+    # Manila handlers
+    "share": "sunbeam_migrate.handlers.manila.share.ShareHandler",
+    "share-type": "sunbeam_migrate.handlers.manila.share_type.ShareTypeHandler",
     # Nova handlers
     "flavor": "sunbeam_migrate.handlers.nova.flavor.FlavorHandler",
     # Neutron handlers

@@ -370,6 +370,14 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
 `sunbeam_migrate/tests/integration` contains integration tests that exercise every supported
 migration handler.
 
+The following requirements must be installed first:
+
+```
+sudo apt-get update
+sudo apt-get install -y tox nfs-common
+sudo snap install --classic astral-uv
+```
+
 The tests receive a configuration file similar to the standard `SUNBEAM_MIGRATE_CONFIG` file,
 having a few additional test specific settings.
 

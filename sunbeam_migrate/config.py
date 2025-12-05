@@ -44,6 +44,20 @@ class SunbeamMigrateConfig(BaseModel):
     # Defaults to "false" for increased compatibility.
     preserve_volume_availability_zone: bool | None = False
     volume_upload_timeout: int = 1800
+    # Preserve the Manila share type.
+    preserve_share_type: bool | None = False
+    # How much to wait for OpenStack resource provisioning.
+    resource_creation_timeout: int = 300
+    # The following directory is used to store temporary data and mounts
+    # used as part of the migration process.
+    temporary_migration_dir: Path = Path(
+        os.path.expandvars("$HOME/.local/share/sunbeam-migrate/migration_dir")
+    )
+    # The local IP used to access Manila shares. A temporary share access
+    # rule will be defined, ensuring that the local host can access the
+    # share that's being migrated. If not provided, it will be detected
+    # automatically.
+    manila_local_access_ip: str | None = None
 
     def load_config(self, path: Path):
         """Load the configuration from the specified file."""

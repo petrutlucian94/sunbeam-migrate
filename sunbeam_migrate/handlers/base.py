@@ -7,7 +7,7 @@ import os
 import openstack
 from openstack import exceptions as openstack_exc
 
-from sunbeam_migrate import config, exception
+from sunbeam_migrate import config, constants, exception
 
 CONF = config.get_config()
 
@@ -134,7 +134,10 @@ class BaseMigrationHandler(abc.ABC):
             raise exception.InvalidInput("No cloud config provided.")
 
         os.environ["OS_CLIENT_CONFIG_FILE"] = str(CONF.cloud_config_file)
-        return openstack.connect(cloud=cloud_name)
+        return openstack.connect(
+            cloud=cloud_name,
+            share_api_version=constants.MANILA_MICROVERSION,
+        )
 
     @property
     def _source_session(self):
