@@ -347,23 +347,12 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
 
 * Add new resource handlers.
 * Implement manager unit tests
-* Consider having a "mappings.yaml" file, allowing a different resource from the destination
-  cloud to be used instead of an exact copy of the source resource.
-  For example, we might want to use a different set of volume types, flavors or networks,
-  matching the specifics of the destination cloud.
-  Example:
-  ```
-  volume-flavors:
-    - source-id: <uuid>
-      destination-id: <uuid>
-  networks:
-    - source-id: <uuid>
-      destination-id: <uuid>
-  ```
 * Instead of dry runs, have migration plans similar to Terraform plans. The user could then
   see the resources that are going to be migrated, trigger the migration plan and then check
   the migration status for the specified plan.
   The resource dependencies could be modeled through a tree.
+* Finalize the implementation for cross-tenant migrations and add integration tests.
+* Add batch migration tests for every supported resource type.
 
 ## Functional tests
 
