@@ -28,9 +28,10 @@ class UserHandler(base.BaseMigrationHandler):
     def get_associated_resource_types(self) -> list[str]:
         """Get a list of associated resource types.
 
-        Users depend on domains and roles (for role assignments).
+        Users depend on domains, projects (if default_project_id is set),
+        and roles (for role assignments).
         """
-        return ["domain", "role"]
+        return ["domain", "project", "role"]
 
     def get_associated_resources(self, resource_id: str) -> list[tuple[str, str]]:
         """Get a list of associated resources.
@@ -46,8 +47,12 @@ class UserHandler(base.BaseMigrationHandler):
 
         associated_resources.append(("domain", source_user.domain_id))
 
+        # Add default project if present
+        if source_user.default_project_id:
+            associated_resources.append(("project", source_user.default_project_id))
+
         for assignment in self._source_session.identity.role_assignments(
-            user=source_user.id,
+            user_id=source_user.id,
         ):
             associated_resources.append(("role", assignment.role["id"]))
 
@@ -98,7 +103,7 @@ class UserHandler(base.BaseMigrationHandler):
     ):
         """Recreate role assignments for the migrated user."""
         for assignment in self._source_session.identity.role_assignments(
-            user=source_user.id
+            user_id=source_user.id
         ):
             role_id = assignment.role["id"]
 
@@ -112,10 +117,10 @@ class UserHandler(base.BaseMigrationHandler):
             project_id = None
             domain_id = None
             if assignment.scope:
-                if assignment.scope.project:
-                    project_id = assignment.scope.project.get("id")
-                if assignment.scope.domain:
-                    domain_id = assignment.scope.domain.get("id")
+                if "project" in assignment.scope:
+                    project_id = assignment.scope["project"].get("id")
+                if "domain" in assignment.scope:
+                    domain_id = assignment.scope["domain"].get("id")
 
             # Recreate project-level assignment
             if project_id:
@@ -178,6 +183,15 @@ class UserHandler(base.BaseMigrationHandler):
             migrated_associated_resources,
         )
         kwargs["domain_id"] = destination_domain_id
+
+        # Set default_project_id if present
+        if source_user.default_project_id:
+            destination_project_id = self._get_associated_resource_destination_id(
+                "project",
+                source_user.default_project_id,
+                migrated_associated_resources,
+            )
+            kwargs["default_project_id"] = destination_project_id
 
         # Note: We don't migrate passwords for security reasons.
         # Users will need to reset their passwords on the destination.

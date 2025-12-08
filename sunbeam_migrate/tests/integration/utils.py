@@ -77,6 +77,6 @@ def get_destination_resource_id(
     migrations = get_migrations(config_path, resource_type, source_id)
     if not migrations:
         raise ValueError(
-            "Migrated {resource_type} not found, source resource: {source_id}."
+            f"Migrated {resource_type} not found, source resource: {source_id}."
         )
     return migrations[-1]["destination_id"]
