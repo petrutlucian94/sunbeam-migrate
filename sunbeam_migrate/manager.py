@@ -188,7 +188,11 @@ class SunbeamMigrationManager:
             for associated_migration in associated_migrations:
                 self.cleanup_migration_source(associated_migration)
 
-        LOG.info("Successfully migrated resource, destination id: %s", destination_id)
+        LOG.info(
+            "Successfully migrated %s resource, destination id: %s",
+            resource_type,
+            destination_id,
+        )
         migration.status = constants.STATUS_COMPLETED
         migration.destination_id = destination_id
         migration.save()
