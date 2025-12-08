@@ -25,6 +25,30 @@ class DomainHandler(base.BaseMigrationHandler):
         """
         return []
 
+    def get_member_resource_types(self) -> list[str]:
+        """Get a list of member (contained) resource types.
+
+        The migrations can cascade to contained resources.
+        """
+        return ["project"]
+
+    def get_member_resources(self, resource_id: str) -> list[tuple[str, str]]:
+        """Get a list of member resources.
+
+        Each entry will be a tuple containing the resource type and
+        the resource id.
+        """
+        source_domain = self._source_session.identity.get_domain(resource_id)
+        if not source_domain:
+            raise exception.NotFound(f"Domain not found: {resource_id}")
+
+        member_resources: list[tuple[str, str]] = []
+        for project in self._source_session.identity.projects(
+            domain_id=source_domain.id
+        ):
+            member_resources.append(("project", project.id))
+        return member_resources
+
     def perform_individual_migration(
         self,
         resource_id: str,
