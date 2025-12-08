@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: 2025 - Canonical Ltd
 # SPDX-License-Identifier: Apache-2.0
 
-import pytest
-from openstack import exceptions as openstack_exc
-
 from sunbeam_migrate.tests.integration import utils as test_utils
 from sunbeam_migrate.tests.integration.handlers.keystone import (
     utils as keystone_test_utils,
@@ -49,9 +46,7 @@ def test_migrate_role_with_cleanup(
     )
     assert dest_role, "couldn't find migrated resource"
     request.addfinalizer(
-        lambda: keystone_test_utils.delete_role(
-            test_destination_session, dest_role.id
-        )
+        lambda: keystone_test_utils.delete_role(test_destination_session, dest_role.id)
     )
 
     keystone_test_utils.check_migrated_role(

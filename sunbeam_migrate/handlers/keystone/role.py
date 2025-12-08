@@ -86,9 +86,7 @@ class RoleHandler(base.BaseMigrationHandler):
             )
             return existing_role.id
 
-        destination_role = self._destination_session.identity.create_role(
-            **role_kwargs
-        )
+        destination_role = self._destination_session.identity.create_role(**role_kwargs)
 
         return destination_role.id
 
@@ -138,4 +136,3 @@ class RoleHandler(base.BaseMigrationHandler):
 
     def _delete_resource(self, resource_id: str, openstack_session):
         openstack_session.identity.delete_role(resource_id, ignore_missing=True)
-

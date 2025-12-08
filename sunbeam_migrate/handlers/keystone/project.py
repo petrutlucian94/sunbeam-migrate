@@ -47,6 +47,37 @@ class ProjectHandler(base.BaseMigrationHandler):
         associated_resources.append(("domain", source_project.domain_id))
         return associated_resources
 
+    def get_member_resource_types(self) -> list[str]:
+        """Get a list of member (contained) resource types.
+
+        The migrations can cascade to contained resources.
+        """
+        return ["user"]
+
+    def get_member_resources(self, resource_id: str) -> list[tuple[str, str]]:
+        """Get a list of member resources.
+
+        Each entry will be a tuple containing the resource type and
+        the resource id.
+        """
+        source_project = self._source_session.identity.get_project(resource_id)
+        if not source_project:
+            raise exception.NotFound(f"Project not found: {resource_id}")
+
+        member_resources: list[tuple[str, str]] = []
+        # Query users in the same domain as the project
+        # Filter to only include users with default_project_id matching this project
+        for user in self._source_session.identity.users(
+            domain_id=source_project.domain_id
+        ):
+            if (
+                hasattr(user, "default_project_id")
+                and user.default_project_id == source_project.id
+            ):
+                member_resources.append(("user", user.id))
+
+        return member_resources
+
     def perform_individual_migration(
         self,
         resource_id: str,

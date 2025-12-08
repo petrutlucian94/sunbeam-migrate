@@ -30,7 +30,7 @@ class DomainHandler(base.BaseMigrationHandler):
 
         The migrations can cascade to contained resources.
         """
-        return ["project"]
+        return ["project", "user"]
 
     def get_member_resources(self, resource_id: str) -> list[tuple[str, str]]:
         """Get a list of member resources.
@@ -43,10 +43,18 @@ class DomainHandler(base.BaseMigrationHandler):
             raise exception.NotFound(f"Domain not found: {resource_id}")
 
         member_resources: list[tuple[str, str]] = []
+        # Add projects belonging to this domain
         for project in self._source_session.identity.projects(
             domain_id=source_domain.id
         ):
             member_resources.append(("project", project.id))
+
+        # Add users belonging to this domain that don't have a project assigned
+        for user in self._source_session.identity.users(domain_id=source_domain.id):
+            # Only include users without a default_project_id
+            if not hasattr(user, "default_project_id") or not user.default_project_id:
+                member_resources.append(("user", user.id))
+
         return member_resources
 
     def perform_individual_migration(
