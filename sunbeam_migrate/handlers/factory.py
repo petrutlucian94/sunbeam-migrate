@@ -17,6 +17,7 @@ MIGRATION_HANDLERS = {
     "image": "sunbeam_migrate.handlers.glance.image.ImageHandler",
     # Keystone handlers
     "domain": "sunbeam_migrate.handlers.keystone.domain.DomainHandler",
+    "project": "sunbeam_migrate.handlers.keystone.project.ProjectHandler",
     # Manila handlers
     "share": "sunbeam_migrate.handlers.manila.share.ShareHandler",
     "share-type": "sunbeam_migrate.handlers.manila.share_type.ShareTypeHandler",
