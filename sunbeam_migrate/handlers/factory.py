@@ -31,6 +31,8 @@ MIGRATION_HANDLERS = {
     "subnet": "sunbeam_migrate.handlers.neutron.subnet.SubnetHandler",
     "security-group": "sunbeam_migrate.handlers.neutron.security_group.SecurityGroupHandler",
     "security-group-rule": "sunbeam_migrate.handlers.neutron.security_group_rule.SecurityGroupRuleHandler",
+    # Octavia handlers
+    "load-balancer": "sunbeam_migrate.handlers.octavia.load_balancer.LoadBalancerHandler",
 }
 
 

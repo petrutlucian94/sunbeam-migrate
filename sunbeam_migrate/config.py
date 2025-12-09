@@ -35,6 +35,8 @@ class SunbeamMigrateConfig(BaseModel):
         os.path.expandvars("$HOME/.local/share/sunbeam-migrate/sqlite.db")
     )
     image_transfer_chunk_size: int = 32 * 1024 * 1024  # 32MB
+    # Timeout for load balancer provisioning during migration.
+    load_balancer_migration_timeout: int = 300
     # Preserve the volume type when migrating volumes. Defaults to "false" for
     # increased compatibility. If enabled, the volume types will be migrated and
     # used when transferring volumes. Manually created types may be registered
