@@ -40,20 +40,13 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
             raise exception.NotFound(f"Load balancer not found: {resource_id}")
 
         associated_resources: list[tuple[str, str]] = []
-        seen: set[tuple[str, str]] = set()
 
         if source_load_balancer.vip_subnet_id:
-            if ("subnet", source_load_balancer.vip_subnet_id) not in seen:
-                seen.add(("subnet", source_load_balancer.vip_subnet_id))
-                associated_resources.append(
-                    ("subnet", source_load_balancer.vip_subnet_id)
-                )
+            associated_resources.append(("subnet", source_load_balancer.vip_subnet_id))
         if source_load_balancer.vip_network_id:
-            if ("network", source_load_balancer.vip_network_id) not in seen:
-                seen.add(("network", source_load_balancer.vip_network_id))
-                associated_resources.append(
-                    ("network", source_load_balancer.vip_network_id)
-                )
+            associated_resources.append(
+                ("network", source_load_balancer.vip_network_id)
+            )
 
         # Collect member subnets from any default pools attached to listeners
         for listener in self._source_session.load_balancer.listeners(
@@ -70,8 +63,7 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
             for member in self._source_session.load_balancer.members(pool.id):
                 member_subnet_id = getattr(member, "subnet_id", None)
                 if member_subnet_id:
-                    if ("subnet", member_subnet_id) not in seen:
-                        seen.add(("subnet", member_subnet_id))
+                    if ("subnet", member_subnet_id) not in associated_resources:
                         associated_resources.append(("subnet", member_subnet_id))
 
         return associated_resources
