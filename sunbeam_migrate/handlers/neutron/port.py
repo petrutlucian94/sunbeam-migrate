@@ -22,9 +22,10 @@ class PortHandler(base.BaseMigrationHandler):
     def get_associated_resource_types(self) -> list[str]:
         """Get a list of associated resource types.
 
-        Ports depend on networks and security groups, which must be migrated first.
+        Ports depend on networks, subnets, and security groups,
+        which must be migrated first.
         """
-        return ["network", "security-group"]
+        return ["network", "subnet", "security-group"]
 
     def get_associated_resources(self, resource_id: str) -> list[tuple[str, str]]:
         """Return the source resources this port depends on."""
@@ -35,6 +36,13 @@ class PortHandler(base.BaseMigrationHandler):
         associated_resources = []
         if source_port.network_id:
             associated_resources.append(("network", source_port.network_id))
+
+        # Add subnets as associated resources from fixed_ips
+        fixed_ips = source_port.fixed_ips or []
+        for fixed_ip in fixed_ips:
+            subnet_id = fixed_ip.get("subnet_id")
+            if subnet_id:
+                associated_resources.append(("subnet", subnet_id))
 
         # Add security groups as associated resources
         security_group_ids = source_port.security_group_ids or []
@@ -82,7 +90,7 @@ class PortHandler(base.BaseMigrationHandler):
             # "dns_assignment",
             "dns_name",
             "extra_dhcp_opts",
-            "fixed_ips",
+            # "fixed_ips",  # Handled explicitly with subnet ID mapping
             "mac_address",
             "name",
             "port_security_enabled",
@@ -107,9 +115,25 @@ class PortHandler(base.BaseMigrationHandler):
             )
             destination_security_group_ids.append(dest_sg_id)
 
+        # Map subnet IDs in fixed_ips from source to destination
+        fixed_ips = source_port.fixed_ips or []
+        destination_fixed_ips = []
+        for fixed_ip in fixed_ips:
+            dest_fixed_ip = fixed_ip.copy()
+            if "subnet_id" in dest_fixed_ip and dest_fixed_ip["subnet_id"]:
+                dest_subnet_id = self._get_associated_resource_destination_id(
+                    "subnet",
+                    dest_fixed_ip["subnet_id"],
+                    migrated_associated_resources,
+                )
+                dest_fixed_ip["subnet_id"] = dest_subnet_id
+            destination_fixed_ips.append(dest_fixed_ip)
+
         kwargs["network_id"] = destination_network_id
         if destination_security_group_ids:
             kwargs["security_group_ids"] = destination_security_group_ids
+        if destination_fixed_ips:
+            kwargs["fixed_ips"] = destination_fixed_ips
 
         destination_port = self._destination_session.network.create_port(**kwargs)
         return destination_port.id
