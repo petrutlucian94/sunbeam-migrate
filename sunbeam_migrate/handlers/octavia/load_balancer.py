@@ -253,8 +253,9 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
             "description",
             "is_admin_state_up",
             "flavor_id",
-            "availability_zone",
         ]
+        if CONF.preserve_load_balancer_availability_zone:
+            fields.append("availability_zone")
 
         kwargs = {}
         for field in fields:

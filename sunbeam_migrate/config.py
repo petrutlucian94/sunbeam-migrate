@@ -45,6 +45,8 @@ class SunbeamMigrateConfig(BaseModel):
     # Preserve the volume availability zone when migrating volumes.
     # Defaults to "false" for increased compatibility.
     preserve_volume_availability_zone: bool | None = False
+    preserve_instance_availability_zone: bool | None = False
+    preserve_load_balancer_availability_zone: bool | None = False
     volume_upload_timeout: int = 1800
     # Preserve the Manila share type.
     preserve_share_type: bool | None = False

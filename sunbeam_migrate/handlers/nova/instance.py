@@ -218,6 +218,7 @@ class InstanceHandler(base.BaseMigrationHandler):
 
         return destination_instance.id
 
+    # ruff: noqa: C901
     def _build_instance_kwargs(
         self,
         source_instance: Any,
@@ -274,21 +275,6 @@ class InstanceHandler(base.BaseMigrationHandler):
             )
             destination_networks.append({"port": dest_port_id})
 
-        if not destination_networks:
-            # Fallback: if no ports found, try to use networks from addresses
-            # This is a fallback for instances that might not have explicit ports
-            addresses = getattr(source_instance, "addresses", None) or {}
-            for network_name in addresses:
-                # Try to find network by name
-                network = self._source_session.network.find_network(
-                    network_name, ignore_missing=True
-                )
-                if network:
-                    dest_network_id = self._get_associated_resource_destination_id(
-                        "network", network.id, migrated_associated_resources
-                    )
-                    destination_networks.append({"uuid": dest_network_id})
-
         if destination_networks:
             kwargs["networks"] = destination_networks
 
@@ -326,6 +312,9 @@ class InstanceHandler(base.BaseMigrationHandler):
             "config_drive",
             "description",
         ]
+        if CONF.preserve_instance_availability_zone:
+            optional_fields.append("availability_zone")
+
         for field in optional_fields:
             value = getattr(source_instance, field, None)
             if value is not None:
