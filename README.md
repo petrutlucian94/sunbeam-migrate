@@ -420,7 +420,12 @@ cloud_config_file: /home/ubuntu/cloud-config.yaml
 source_cloud_name: source-admin
 destination_cloud_name: destination-admin
 database_file: /home/ubuntu/.local/share/sunbeam-migrate/sqlite.db
-skip_project_purge: false
+preserve_volume_type: true
+
+# settings used by the integration tests
+skip_project_purge: true
+image_id:  334ad443-352f-475b-8c9b-f16825455a3f
+flavor_id: f128eb24-47ec-427a-a2a6-ccfbafce105f
 EOF
 
 $ tox -e integration
