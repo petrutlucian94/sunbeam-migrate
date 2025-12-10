@@ -23,7 +23,7 @@ def configure_logging(debug: bool = False):
         stream_handler = logging.StreamHandler()
         stream_handler.setLevel(log_level)
         log_fmt = logging.Formatter(
-            "%(asctime)s,%(msecs)d %(levelname)s %(message)s",
+            "%(asctime)s,%(msecs)03d %(levelname)s %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
         stream_handler.setFormatter(log_fmt)
