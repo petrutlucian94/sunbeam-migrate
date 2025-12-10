@@ -192,7 +192,6 @@ class InstanceHandler(base.BaseMigrationHandler):
             )
 
             # Create instance on destination
-            import pdb; pdb.set_trace()
             destination_instance = self._destination_session.compute.create_server(
                 **instance_kwargs
             )

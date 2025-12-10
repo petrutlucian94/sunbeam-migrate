@@ -15,17 +15,38 @@ def _create_test_instance(
     session,
     flavor_id,
     network,
-    image_id,
+    image_id=None,
+    volume_ids: list[str] | None = None,
     security_group=None,
     keypair=None,
 ):
     """Create a test instance."""
     instance_kwargs = {
         "name": test_utils.get_test_resource_name(),
-        "image_id": image_id,
         "flavor_id": flavor_id,
         "networks": [{"uuid": network.id}],
     }
+
+    assert volume_ids or image_id, "No boot device specified"
+    volume_boot_index = 0
+    if image_id:
+        instance_kwargs["image_id"] = image_id
+        volume_boot_index += 1
+
+    block_device_mapping = []
+    for volume_id in volume_ids or []:
+        block_device_mapping.append(
+            {
+                "boot_index": volume_boot_index,
+                "uuid": volume_id,
+                "source_type": "volume",
+                "destination_type": "volume",
+                "delete_on_termination": False,
+            }
+        )
+        volume_boot_index += 1
+    if block_device_mapping:
+        instance_kwargs["block_device_mapping_v2"] = block_device_mapping
 
     if security_group:
         instance_kwargs["security_groups"] = [
@@ -69,58 +90,6 @@ def _check_migrated_instance(
         )
 
     # TODO: validate the volume attachments and ports.
-
-
-def _create_test_instance_from_volume(
-    session,
-    flavor_id,
-    network,
-    boot_volume_id,
-    additional_volume_id=None,
-):
-    """Create a test instance booted from volume."""
-    block_device_mapping = [
-        {
-            "boot_index": 0,
-            "uuid": boot_volume_id,
-            "source_type": "volume",
-            "destination_type": "volume",
-            "delete_on_termination": False,
-        }
-    ]
-
-    if additional_volume_id:
-        block_device_mapping.append(
-            {
-                "boot_index": 1,
-                "uuid": additional_volume_id,
-                "source_type": "volume",
-                "destination_type": "volume",
-                "delete_on_termination": False,
-            }
-        )
-
-    instance_kwargs = {
-        "name": test_utils.get_test_resource_name(),
-        "flavor_id": flavor_id,
-        "block_device_mapping_v2": block_device_mapping,
-        "networks": [{"uuid": network.id}],
-    }
-
-    LOG.info("Creating instance from volume: %s", instance_kwargs)
-    instance = session.compute.create_server(**instance_kwargs)
-    LOG.info("Created instance: %s, waiting for it to become active.", instance.id)
-    # Wait for instance to be active
-    session.compute.wait_for_server(
-        instance,
-        status="ACTIVE",
-        failures=["ERROR"],
-        interval=5,
-        wait=300,
-    )
-    LOG.info("Instance active: %s", instance.id)
-    # Refresh instance information
-    return session.compute.get_server(instance.id)
 
 
 def _delete_instance(session, instance):
@@ -286,12 +255,11 @@ def test_migrate_instance_booted_from_volume(
     )
 
     # Create instance booted from volume
-    instance = _create_test_instance_from_volume(
+    instance = _create_test_instance(
         test_source_session,
         base_config.flavor_id,
         network,
-        boot_volume.id,
-        additional_volume_id=additional_volume.id,
+        volume_ids=[boot_volume.id, additional_volume.id],
     )
     request.addfinalizer(lambda: _delete_instance(test_source_session, instance))
 
