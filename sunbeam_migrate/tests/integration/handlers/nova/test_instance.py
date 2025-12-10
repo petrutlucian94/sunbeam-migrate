@@ -68,18 +68,7 @@ def _check_migrated_instance(
             "keypair name mismatch"
         )
 
-    # Check security groups count
-    source_sg_ids = [
-        sg.get("id") if isinstance(sg, dict) else getattr(sg, "id", None)
-        for sg in (getattr(source_instance, "security_groups", None) or [])
-    ]
-    dest_sg_ids = [
-        sg.get("id") if isinstance(sg, dict) else getattr(sg, "id", None)
-        for sg in (getattr(destination_instance, "security_groups", None) or [])
-    ]
-    assert len(source_sg_ids) == len(dest_sg_ids), (
-        f"security group count mismatch: {len(source_sg_ids)} != {len(dest_sg_ids)}"
-    )
+    # TODO: validate the volume attachments and ports.
 
 
 def _create_test_instance_from_volume(

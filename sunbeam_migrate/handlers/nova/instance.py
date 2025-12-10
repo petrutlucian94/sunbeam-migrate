@@ -24,14 +24,9 @@ class InstanceHandler(base.BaseMigrationHandler):
         return ["owner_id"]
 
     def get_associated_resource_types(self) -> list[str]:
-        """Get a list of associated resource types.
-
-        Instances depend on image, security group, volume, flavor, keypair,
-        network, and port, which must be migrated first.
-        """
+        """Get a list of associated resource types."""
         return [
             "image",
-            "security-group",
             "volume",
             "flavor",
             "keypair",
@@ -47,15 +42,17 @@ class InstanceHandler(base.BaseMigrationHandler):
 
         associated_resources = []
 
-        # Image
+        # Ports attached to the instance
         #
-        # Instances booted from image will be uploaded to Glance so that the
-        # current VM data gets migrated. To accommodate scenarios that can start
-        # with a fresh root disk, we may eventually add a setting called
-        # "preserve_root_disk", allowing the original image to be used instead.
+        # TODO: manually created ports are not deleted along with the instance.
+        # However, it allows us to pass port settings that wouldn't be accessible
+        # otherwise (e.g. port mac, vnic type, etc). That being considered, we should
+        # have a config option, e.g. `migrate_instance_ports_individually`.
         #
-        # if source_instance.image and source_instance.image.get("id"):
-        #     associated_resources.append(("image", source_instance.image["id"]))
+        # Security groups will also have to be passed to the instance creation request
+        # if we choose to no longer create ports manually.
+        for port in self._source_session.network.ports(device_id=source_instance.id):
+            associated_resources.append(("port", port.id))
 
         # Flavor
         source_flavor = self._source_session.compute.find_flavor(
@@ -70,22 +67,23 @@ class InstanceHandler(base.BaseMigrationHandler):
             )
             associated_resources.append(("keypair", keypair.id))
 
-        # Security groups
-        for sg in source_instance.security_groups or []:
-            associated_resources.append(("security-group", sg["id"]))
-
-        # Volumes attached to the instance
-        for volume in source_instance.volumes_attached or []:
-            associated_resources.append(("volume", volume["id"]))
-
-        # Ports attached to the instance
+        # Image
         #
-        # TODO: manually created ports are not deleted along with the instance.
-        # However, it allows us to pass port settings that wouldn't be accessible
-        # otherwise (e.g. port mac, vnic type, etc). That being considered, we should
-        # have a config option, e.g. `migrate_instance_ports_individually`.
-        for port in self._source_session.network.ports(device_id=source_instance.id):
-            associated_resources.append(("port", port.id))
+        # Instances booted from image will be uploaded to Glance so that the
+        # current VM data gets migrated. To accommodate scenarios that can start
+        # with a fresh root disk, we may eventually add a setting called
+        # "preserve_root_disk", allowing the original image to be used instead.
+        #
+        # if source_instance.image and source_instance.image.get("id"):
+        #     associated_resources.append(("image", source_instance.image["id"]))
+
+        # Volumes attached to the instance.
+        #
+        # Note that we're uploading the volumes to Glance in order to retrieve the
+        # data. Cinder must be configured with `enable_force_upload = True` in order
+        # to upload attached volumes.
+        for volume in source_instance.attached_volumes or []:
+            associated_resources.append(("volume", volume["id"]))
 
         return associated_resources
 
@@ -115,7 +113,7 @@ class InstanceHandler(base.BaseMigrationHandler):
         migrated_associated_resources: list[tuple[str, str, str]],
     ) -> list[dict[str, Any]]:
         block_device_mapping = []
-        for volume_attached in source_instance.volumes_attached or []:
+        for volume_attached in source_instance.attached_volumes or []:
             # Use the attachment API to retrieve more details.
             volume_id = volume_attached["id"]
             attachment = self._source_session.compute.get_volume_attachment(
@@ -130,8 +128,9 @@ class InstanceHandler(base.BaseMigrationHandler):
                 "delete_on_termination": attachment.delete_on_termination,
                 "uuid": dest_volume_id,
                 "source_type": "volume",
-                "tag": attachment.tag,
             }
+            if attachment.tag:
+                mapping["tag"] = attachment.tag
             if attachment.device in ("/dev/sda", "/dev/vda"):
                 mapping["boot_index"] = 0
 
@@ -256,19 +255,6 @@ class InstanceHandler(base.BaseMigrationHandler):
                 dest_keypair_id
             )
             kwargs["key_name"] = dest_keypair.name
-
-        # Security groups
-        security_groups = getattr(source_instance, "security_groups", None) or []
-        destination_security_group_ids = []
-        for sg in security_groups:
-            sg_id = sg.get("id") if isinstance(sg, dict) else getattr(sg, "id", None)
-            if sg_id:
-                dest_sg_id = self._get_associated_resource_destination_id(
-                    "security-group", sg_id, migrated_associated_resources
-                )
-                destination_security_group_ids.append(dest_sg_id)
-        if destination_security_group_ids:
-            kwargs["security_groups"] = destination_security_group_ids
 
         # Networks/Ports
         # Get ports attached to instance and map to destination ports
