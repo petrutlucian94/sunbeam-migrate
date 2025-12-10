@@ -88,6 +88,9 @@ class NetworkHandler(base.BaseMigrationHandler):
             if value:
                 kwargs[field] = value
 
+        # TODO: add a setting called "preserve_segmentation_id" and default to False.
+        # Otherwise we risk conflicts with other existing networks.
+
         dest_network = self._destination_session.network.create_network(**kwargs)
 
         return dest_network.id

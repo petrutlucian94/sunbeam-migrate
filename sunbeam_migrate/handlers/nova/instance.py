@@ -128,6 +128,7 @@ class InstanceHandler(base.BaseMigrationHandler):
                 "delete_on_termination": attachment.delete_on_termination,
                 "uuid": dest_volume_id,
                 "source_type": "volume",
+                "destination_type": "volume",
             }
             if attachment.tag:
                 mapping["tag"] = attachment.tag
@@ -191,6 +192,7 @@ class InstanceHandler(base.BaseMigrationHandler):
             )
 
             # Create instance on destination
+            import pdb; pdb.set_trace()
             destination_instance = self._destination_session.compute.create_server(
                 **instance_kwargs
             )
