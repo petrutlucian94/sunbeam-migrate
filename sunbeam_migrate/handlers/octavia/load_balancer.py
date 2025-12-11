@@ -29,7 +29,7 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
 
         Associated resources must be migrated first.
         """
-        return ["network", "subnet"]
+        return ["network", "subnet", "router", "floating-ip"]
 
     def get_associated_resources(self, resource_id: str) -> list[base.Resource]:
         """Return the source resources this loadbalancer depends on."""
@@ -76,6 +76,19 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
                         )
                     )
 
+        # Collect any floating IPs associated with the load balancer's port
+        source_lb_port_id = source_load_balancer.vip_port_id
+        if source_lb_port_id:
+            for floating_ip in self._source_session.network.ips(
+                port_id=source_lb_port_id
+            ):
+                if floating_ip.id:
+                    associated_resources.append(("floating-ip", floating_ip.id))
+
+        # Collect routers for the VIP subnet
+        router_id = self._get_router_from_subnet(source_load_balancer.vip_subnet_id)
+        if router_id:
+            associated_resources.append(("router", router_id))
         return associated_resources
 
     def get_member_resource_types(self) -> list[str]:
@@ -85,6 +98,7 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
         """
         return []
 
+    # ruff: noqa: C901
     def perform_individual_migration(
         self,
         resource_id: str,
@@ -205,6 +219,63 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
                             wait=CONF.load_balancer_migration_timeout,
                         )
 
+        # Attach Floating IPs to the destination load balancer port
+        dest_lb = self._destination_session.load_balancer.get_load_balancer(dest_lb_id)
+
+        # To allow FIP association, associate destination port to router first
+        source_router_id = self._get_router_from_subnet(source_lb.vip_subnet_id)
+        if source_router_id:
+            try:
+                dest_router_id = self._get_associated_resource_destination_id(
+                    "router",
+                    source_router_id,
+                    migrated_associated_resources,
+                )
+                self._destination_session.network.add_interface_to_router(
+                    dest_router_id,
+                    subnet_id=dest_lb.vip_subnet_id,
+                )
+                LOG.info(
+                    "Added interface from subnet %s to router %s on destination "
+                    "to allow floating IP association",
+                    dest_lb.vip_subnet_id,
+                    dest_router_id,
+                )
+            except exception.NotFound:
+                LOG.warning(
+                    "Router %s not found in migrated associated resources, "
+                    "skipping interface addition on destination",
+                    source_router_id,
+                )
+
+        if dest_lb.vip_port_id:
+            for fip in self._source_session.network.ips(port_id=source_lb.vip_port_id):
+                try:
+                    dest_fip_id = self._get_associated_resource_destination_id(
+                        "floating-ip",
+                        fip.id,
+                        migrated_associated_resources,
+                    )
+                except exception.NotFound:
+                    LOG.warning(
+                        "Floating IP %s not found in migrated associated resources, "
+                        "skipping association with destination load balancer",
+                        fip.id,
+                    )
+                    continue
+
+                self._destination_session.network.update_ip(
+                    dest_fip_id,
+                    port_id=dest_lb.vip_port_id,
+                )
+                LOG.info(
+                    "Associated floating IP %s (dest id: %s) to load balancer %s "
+                    "on destination VIP port %s",
+                    fip.floating_ip_address,
+                    dest_fip_id,
+                    dest_lb_id,
+                    dest_lb.vip_port_id,
+                )
         return dest_lb_id
 
     def get_source_resource_ids(self, resource_filters: dict[str, str]) -> list[str]:
@@ -461,3 +532,22 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
             dest_hm.id,
             source_hm.id,
         )
+
+    def _get_router_from_subnet(self, subnet_id: str) -> str | None:
+        """Get the router ID associated with a subnet.
+
+        :param subnet_id: the subnet ID
+
+        Return the router ID or None if not found.
+        """
+        for router in self._source_session.network.routers():
+            for port in self._source_session.network.ports(
+                device_id=router.id,
+                device_owner="network:router_interface",
+            ):
+                fixed_ips = getattr(port, "fixed_ips", None) or []
+                if any(
+                    fixed_ip.get("subnet_id") == subnet_id for fixed_ip in fixed_ips
+                ):
+                    return router.id
+        return None
