@@ -15,13 +15,6 @@ class SecretContainerHandler(base.BaseMigrationHandler):
         """Get the service type for this type of resource."""
         return "barbican"
 
-    def get_supported_resource_filters(self) -> list[str]:
-        """Get a list of supported resource filters.
-
-        These filters can be specified when initiating batch migrations.
-        """
-        return ["owner_id"]
-
     def get_associated_resource_types(self) -> list[str]:
         """Get a list of associated resource types."""
         return ["secret"]
