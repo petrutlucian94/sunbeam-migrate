@@ -21,7 +21,20 @@ class ImageHandler(base.BaseMigrationHandler):
 
         These filters can be specified when initiating batch migrations.
         """
-        return ["owner_id"]
+        return ["project_id"]
+
+    def get_associated_resources(self, resource_id: str) -> list[base.Resource]:
+        """Return the source resources this image depends on."""
+        source_image = self._source_session.get_image(resource_id)
+        if not source_image:
+            raise exception.NotFound(f"Image not found: {resource_id}")
+
+        associated_resources: list[base.Resource] = []
+        self._report_identity_dependencies(
+            associated_resources, project_id=source_image.owner_id
+        )
+
+        return associated_resources
 
     def perform_individual_migration(
         self,
@@ -39,12 +52,6 @@ class ImageHandler(base.BaseMigrationHandler):
         source_image = self._source_session.get_image(resource_id)
         if not source_image:
             raise exception.NotFound(f"Image not found: {resource_id}")
-
-        # TODO: pass the project name if the image belongs to a different tenant.
-        # owner_project_name = source_image.location.project.name
-        # destination_project_name = self._get_explicit_destination_project(
-        #     owner_project_name
-        # )
 
         # Basic properties
         fields = [
@@ -105,6 +112,13 @@ class ImageHandler(base.BaseMigrationHandler):
             if value:
                 kwargs[field] = value
 
+        identity_kwargs = self._get_identity_build_kwargs(
+            migrated_associated_resources,
+            source_project_id=source_image.owner_id,
+            project_id_key="owner",
+        )
+        kwargs.update(identity_kwargs)
+
         destination_image = self._destination_session.create_image(
             data=self._chunked_image_reader(
                 source_image, CONF.image_transfer_chunk_size
@@ -139,8 +153,8 @@ class ImageHandler(base.BaseMigrationHandler):
         self._validate_resource_filters(resource_filters)
 
         query_filters = {}
-        if "owner_id" in resource_filters:
-            query_filters["owner"] = resource_filters["owner_id"]
+        if "project_id" in resource_filters:
+            query_filters["owner"] = resource_filters["project_id"]
 
         resource_ids = []
         for image in self._source_session.image.images(**query_filters):

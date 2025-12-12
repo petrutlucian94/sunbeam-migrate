@@ -2,15 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import abc
+import logging
 import os
 
 import openstack
 import pydantic
-from openstack import exceptions as openstack_exc
 
 from sunbeam_migrate import config, constants, exception
 
 CONF = config.get_config()
+LOG = logging.getLogger()
 
 
 class Resource(pydantic.BaseModel):
@@ -183,28 +184,63 @@ class BaseMigrationHandler(abc.ABC):
 
         return self._cached_destinaton_session
 
-    def _get_explicit_destination_project(self, source_project_name) -> str | None:
-        """Get an explicit destination project name.
+    def _report_identity_dependencies(
+        self,
+        associated_resources: list[Resource],
+        project_id: str | None = None,
+        user_id: str | None = None,
+    ):
+        """Add the identity resources to the list of dependencies."""
+        if not CONF.multitenant_mode:
+            LOG.debug(
+                "Multi-tenant mode disabled, identity resources will not "
+                "be added as dependencies."
+            )
+        if project_id:
+            associated_resources.append(
+                Resource(resource_type="project", source_id=project_id)
+            )
+        if user_id:
+            associated_resources.append(
+                Resource(resource_type="user", source_id=user_id)
+            )
 
-        Admin users may create resources for other tenants. If the source project
-        name matches the session project name, we'll avoid passing a tenant name,
-        using the current tenant instead. This allows non-admin users to migrate
-        resources, using the same tenant name on the destination side.
+    def _get_identity_build_kwargs(
+        self,
+        migrated_associated_resources: list[MigratedResource],
+        source_project_id: str | None = None,
+        source_user_id: str | None = None,
+        project_id_key: str = "project_id",
+        user_id_key: str = "user_id",
+    ) -> dict[str, str]:
+        """Helper method for obtaining identity parameters.
+
+        These parameters specify the owner of the resource that is about
+        to be created on the destination cloud.
+
+        The IDs are retrieved from the list of associated resources since
+        in multi-tenant mode, the identity resources are reported as
+        dependencies.
         """
-        dest_session_project = self._destination_session.auth.get("project_name")
-        if source_project_name == dest_session_project:
-            return None
+        kwargs: dict[str, str] = {}
+        if not CONF.multitenant_mode:
+            LOG.debug("Skipped identity kwargs, multi-tenant mode disabled.")
+            return kwargs
 
-        try:
-            destination_project = self._destination_session.get_project(
-                source_project_name
+        if source_project_id:
+            dest_project_id = self._get_associated_resource_destination_id(
+                "project", source_project_id, migrated_associated_resources
             )
-        except openstack_exc.NotFoundException:
-            raise exception.InvalidInput(
-                f"The {source_project_name} tenant does not exist on "
-                "the destination side."
+            kwargs[project_id_key] = dest_project_id
+
+        if source_user_id:
+            dest_user_id = self._get_associated_resource_destination_id(
+                "user", source_user_id, migrated_associated_resources
             )
-        return destination_project
+            kwargs[user_id_key] = dest_user_id
+
+        LOG.debug("Identity build kwargs: %s", kwargs)
+        return kwargs
 
     def _validate_resource_filters(self, resource_filters: dict[str, str]):
         for key in resource_filters:

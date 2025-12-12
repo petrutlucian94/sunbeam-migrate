@@ -34,6 +34,11 @@ class SunbeamMigrateConfig(BaseModel):
     database_file: Path = Path(
         os.path.expandvars("$HOME/.local/share/sunbeam-migrate/sqlite.db")
     )
+    # The multitenant mode allows identifying and migrating resources owned by
+    # another tenant. This requires admin privileges.
+    # The identity resources (domain, project, user) will be treated as
+    # dependencies and migrated automatically if "--include-dependencies" is set.
+    multitenant_mode: bool = True
     image_transfer_chunk_size: int = 32 * 1024 * 1024  # 32MB
     # Timeout for load balancer provisioning during migration.
     load_balancer_migration_timeout: int = 300
