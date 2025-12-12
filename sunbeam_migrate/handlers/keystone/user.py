@@ -79,8 +79,25 @@ class UserHandler(base.BaseMigrationHandler):
         if not source_user:
             raise exception.NotFound(f"User not found: {resource_id}")
 
+        destination_domain_id = self._get_associated_resource_destination_id(
+            "domain",
+            source_user.domain_id,
+            migrated_associated_resources,
+        )
+
+        existing_user = self._destination_session.identity.find_user(
+            source_user.name, domain_id=destination_domain_id
+        )
+        if existing_user:
+            LOG.warning(
+                "User already exists: %s %s",
+                existing_user.id,
+                existing_user.name,
+            )
+            return existing_user.id
+
         user_kwargs = self._build_user_kwargs(
-            source_user, migrated_associated_resources
+            source_user, destination_domain_id, migrated_associated_resources
         )
         destination_user = self._destination_session.identity.create_user(**user_kwargs)
 
@@ -164,6 +181,7 @@ class UserHandler(base.BaseMigrationHandler):
     def _build_user_kwargs(
         self,
         source_user,
+        destination_domain_id: str,
         migrated_associated_resources: list[base.MigratedResource],
     ) -> dict:
         """Build kwargs for creating a destination user."""
@@ -180,11 +198,6 @@ class UserHandler(base.BaseMigrationHandler):
             if value not in (None, {}):
                 kwargs[field] = value
 
-        destination_domain_id = self._get_associated_resource_destination_id(
-            "domain",
-            source_user.domain_id,
-            migrated_associated_resources,
-        )
         kwargs["domain_id"] = destination_domain_id
 
         # Set default_project_id if present
