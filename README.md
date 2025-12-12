@@ -393,7 +393,7 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
 * Consider adding an option specifying whether to identify existing destination resources
   by name, skipping those that already exist.
   * the user should be able to control the resource types that are identified by name, e.g.
-    * identify_destination_resources_by_name = ["keypair", "project", "user"]
+    * identify_destination_resources_by_name = ["keypair", "network", "subnet"]
   * some resouces may not have a name or there may be multiple resources having the same name,
     which is why this should be configurable.
 * Allow skipping properties that may cause conflicts on the destination cloud:
@@ -404,6 +404,16 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
     * can be skipped completely or just the actual address
   * router IP
 * Attach floating ips to instance ports
+* Consider using temporary users to migrate Barbican secrets owned by
+  other projects
+  * Barbican doesn't allow us to retrieve secrets owned by other projects
+  * We might as well add a temporary user to that tenant and use it to
+    identify and migrate secrets
+  * This behavior can be configurable
+  * Another option would be to temporarily add the user to the
+    target project.
+  * Manila is also affected, it ignores the "project_id" parameter
+    when creating shares.
 
 ## Functional tests
 
