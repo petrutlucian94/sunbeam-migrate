@@ -384,6 +384,7 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
   see the resources that are going to be migrated, trigger the migration plan and then check
   the migration status for the specified plan.
   The resource dependencies could be modeled through a tree.
+* Propagate the dry run to linked resources.
 * Finalize the implementation for cross-tenant migrations and add integration tests.
   * we can add a "multitenant_mode" option.
   * if enabled, projects and users may be reported as associated resources.
@@ -395,6 +396,14 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
     * identify_destination_resources_by_name = ["keypair", "project", "user"]
   * some resouces may not have a name or there may be multiple resources having the same name,
     which is why this should be configurable.
+* Allow skipping properties that may cause conflicts on the destination cloud:
+  * net segmentation id
+  * mac addresses
+  * instance fixed IPs
+  * floating IPs
+    * can be skipped completely or just the actual address
+  * router IP
+* Attach floating ips to instance ports
 
 ## Functional tests
 
@@ -438,3 +447,7 @@ Use the `-k` parameter to specify which test(s) to run:
 ```
 tox -e integration -- -k test_migrate_image_and_cleanup
 ```
+
+A set of temporary credentials will be created for every test module. If multi-tenant
+mode is enabled, the tests will use one tenant for creating the test resources
+(the resource owner) and a separate tenant for initiating the migration (called "requester").
