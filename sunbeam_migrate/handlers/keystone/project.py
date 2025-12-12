@@ -88,8 +88,25 @@ class ProjectHandler(base.BaseMigrationHandler):
         if not source_project:
             raise exception.NotFound(f"Project not found: {resource_id}")
 
+        destination_domain_id = self._get_associated_resource_destination_id(
+            "domain",
+            source_project.domain_id,
+            migrated_associated_resources,
+        )
+
+        existing_project = self._destination_session.identity.find_project(
+            source_project.name, domain_id=destination_domain_id
+        )
+        if existing_project:
+            LOG.warning(
+                "Project already exists: %s %s",
+                existing_project.id,
+                existing_project.name,
+            )
+            return existing_project.id
+
         project_kwargs = self._build_project_kwargs(
-            source_project, migrated_associated_resources
+            source_project, destination_domain_id, migrated_associated_resources
         )
         destination_project = self._destination_session.identity.create_project(
             **project_kwargs
@@ -100,6 +117,7 @@ class ProjectHandler(base.BaseMigrationHandler):
     def _build_project_kwargs(
         self,
         source_project,
+        destination_domain_id: str,
         migrated_associated_resources: list[base.MigratedResource],
     ) -> dict:
         """Build kwargs for creating a destination project."""
@@ -115,11 +133,6 @@ class ProjectHandler(base.BaseMigrationHandler):
             if value not in (None, {}):
                 kwargs[field] = value
 
-        destination_domain_id = self._get_associated_resource_destination_id(
-            "domain",
-            source_project.domain_id,
-            migrated_associated_resources,
-        )
         kwargs["domain_id"] = destination_domain_id
 
         return kwargs
