@@ -389,6 +389,12 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
   * if enabled, projects and users may be reported as associated resources.
 * Add batch migration tests for every supported resource type.
 * Replace "owner-id" filters with "project-id" and/or "user-id".
+* consider adding an option, specifying whether to identify existing destination resources
+  by name, skipping those that already exist.
+  * the user should be able to control the resource types that are identified by name, e.g.
+    * identify_destination_resources_by_name = ["keypair", "project", "user"]
+  * some resouces may not have a name or there may be multiple resources having the same name,
+    which is why this should be configurable.
 
 ## Functional tests
 
