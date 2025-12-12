@@ -20,6 +20,7 @@ def test_migrate_share_with_cleanup(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     # We intend to cover share types, so let's set the following flag.
     test_config.preserve_share_type = True
@@ -58,11 +59,12 @@ def test_migrate_share_with_cleanup(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=share",
-            "--cleanup-source",
             "--include-dependencies",
-            share.id,
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
+            "--cleanup-source",
         ],
     )
 
