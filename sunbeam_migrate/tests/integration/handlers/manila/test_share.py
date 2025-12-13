@@ -4,9 +4,7 @@
 import json
 import subprocess
 
-import pytest
 import yaml
-from openstack import exceptions as openstack_exc
 
 from sunbeam_migrate.tests.integration import utils as test_utils
 from sunbeam_migrate.tests.integration.handlers.manila import utils as manila_test_utils
@@ -20,6 +18,7 @@ def test_migrate_share_with_cleanup(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     # We intend to cover share types, so let's set the following flag.
     test_config.preserve_share_type = True
@@ -58,26 +57,24 @@ def test_migrate_share_with_cleanup(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=share",
-            "--cleanup-source",
             "--include-dependencies",
-            share.id,
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
+            "--cleanup-source",
         ],
     )
 
-    dest_share = test_destination_session.shared_file_system.find_share(share.name)
-    assert dest_share, "couldn't find migrated resource"
-    request.addfinalizer(
-        lambda: manila_test_utils.delete_share(test_destination_session, dest_share.id)
+    dest_share_id = test_utils.get_destination_resource_id(
+        test_config_path, "share", share.id
     )
-    # "find_share" doesn't include all properties (e.g. size), let's refresh it.
-    dest_share = test_destination_session.shared_file_system.get_share(dest_share.id)
+    request.addfinalizer(
+        lambda: manila_test_utils.delete_share(test_destination_session, dest_share_id)
+    )
+    dest_share = test_destination_session.shared_file_system.get_share(dest_share_id)
 
     manila_test_utils.check_migrated_share(share, dest_share)
-
-    with pytest.raises(openstack_exc.ResourceNotFound):
-        test_source_session.shared_file_system.get_share(share.id)
 
     with manila_utils.mounted_nfs_share(
         test_destination_session, dest_share

@@ -39,7 +39,8 @@ def test_migrate_image(
     request.addfinalizer(lambda: test_source_session.delete_image(image.id))
 
     test_utils.call_migrate(
-        test_config_path, ["start", "--resource-type=image", image.id]
+        test_config_path,
+        ["start", "--resource-type=image", "--include-dependencies", image.id],
     )
 
     dest_image = test_destination_session.image.find_image(image.name)
@@ -70,7 +71,13 @@ def test_migrate_image_and_cleanup(
 
     test_utils.call_migrate(
         test_config_path,
-        ["start", "--resource-type=image", "--cleanup-source", image.id],
+        [
+            "start",
+            "--resource-type=image",
+            "--cleanup-source",
+            "--include-dependencies",
+            image.id,
+        ],
     )
 
     dest_image = test_destination_session.image.find_image(image.name)
@@ -90,7 +97,7 @@ def test_migrate_image_batch(
     test_credentials,
     test_source_session,
     test_destination_session,
-    test_source_project,
+    test_owner_source_project,
 ):
     image_count = 3
     source_images = []
@@ -104,8 +111,9 @@ def test_migrate_image_batch(
         [
             "start-batch",
             "--resource-type=image",
+            "--include-dependencies",
             "--filter",
-            f"owner-id:{test_source_project.id}",
+            f"project-id:{test_owner_source_project.id}",
             "--cleanup-source",
         ],
     )

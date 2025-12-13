@@ -78,8 +78,6 @@ class DomainHandler(base.BaseMigrationHandler):
             source_domain.name, ignore_missing=True
         )
         if existing_domain:
-            # TODO: we might consider moving those checks on the manager side
-            # and have a consistent approach across handlers.
             LOG.warning(
                 "Domain already exists: %s %s",
                 existing_domain.id,

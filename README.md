@@ -384,11 +384,36 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
   see the resources that are going to be migrated, trigger the migration plan and then check
   the migration status for the specified plan.
   The resource dependencies could be modeled through a tree.
+* Propagate the dry run to linked resources.
 * Finalize the implementation for cross-tenant migrations and add integration tests.
   * we can add a "multitenant_mode" option.
   * if enabled, projects and users may be reported as associated resources.
 * Add batch migration tests for every supported resource type.
 * Replace "owner-id" filters with "project-id" and/or "user-id".
+* Consider adding an option specifying whether to identify existing destination resources
+  by name, skipping those that already exist.
+  * the user should be able to control the resource types that are identified by name, e.g.
+    * identify_destination_resources_by_name = ["keypair", "network", "subnet"]
+  * some resouces may not have a name or there may be multiple resources having the same name,
+    which is why this should be configurable.
+* Allow skipping properties that may cause conflicts on the destination cloud:
+  * net segmentation id
+  * mac addresses
+  * instance fixed IPs
+  * floating IPs
+    * can be skipped completely or just the actual address
+  * router IP
+* Attach floating ips to instance ports
+* Consider using temporary users to migrate Barbican secrets owned by
+  other projects
+  * Barbican doesn't allow us to retrieve secrets owned by other projects
+  * We might as well add a temporary user to that tenant and use it to
+    identify and migrate secrets
+  * This behavior can be configurable
+  * Another option would be to temporarily add the user to the
+    target project.
+  * Manila is also affected, it ignores the "project_id" parameter
+    when creating shares.
 
 ## Functional tests
 
@@ -432,3 +457,7 @@ Use the `-k` parameter to specify which test(s) to run:
 ```
 tox -e integration -- -k test_migrate_image_and_cleanup
 ```
+
+A set of temporary credentials will be created for every test module. If multi-tenant
+mode is enabled, the tests will use one tenant for creating the test resources
+(the resource owner) and a separate tenant for initiating the migration (called "requester").

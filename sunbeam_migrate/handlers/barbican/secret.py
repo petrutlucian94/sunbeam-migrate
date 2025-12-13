@@ -17,13 +17,6 @@ class SecretHandler(base.BaseMigrationHandler):
         """Get the service type for this type of resource."""
         return "barbican"
 
-    def get_supported_resource_filters(self) -> list[str]:
-        """Get a list of supported resource filters.
-
-        These filters can be specified when initiating batch migrations.
-        """
-        return ["owner_id"]
-
     def perform_individual_migration(
         self,
         resource_id: str,
@@ -90,12 +83,10 @@ class SecretHandler(base.BaseMigrationHandler):
         """
         self._validate_resource_filters(resource_filters)
 
-        query_filters = {}
-        if "owner_id" in resource_filters:
-            query_filters["owner"] = resource_filters["owner_id"]
-
+        # Not even admins are allowed to retrieve secrets owned by other users,
+        # as such multi-tenant mode is not supported.
         resource_ids = []
-        for resource in self._source_session.key_manager.secrets(**query_filters):
+        for resource in self._source_session.key_manager.secrets():
             resource_ids.append(resource.id)
 
         return resource_ids

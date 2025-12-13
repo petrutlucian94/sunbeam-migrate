@@ -55,13 +55,30 @@ def base_destination_session(base_config):
 
 
 @pytest.fixture(scope="module")
-def test_project_name() -> str:
+def test_owner_project_name() -> str:
+    # The project owning the migrated resources.
     return test_utils.get_test_resource_name()
 
 
 @pytest.fixture(scope="module")
-def test_user_name(test_project_name) -> str:
-    return test_project_name
+def test_requester_project_name(base_config, test_owner_project_name) -> str:
+    # The project that requests the migrations.
+    # If multi-tenant mode is disabled, it will be the
+    # resource owner.
+    if base_config.multitenant_mode:
+        return test_utils.get_test_resource_name() + "-req"
+    else:
+        return test_owner_project_name
+
+
+@pytest.fixture(scope="module")
+def test_owner_user_name(test_owner_project_name) -> str:
+    return test_owner_project_name
+
+
+@pytest.fixture(scope="module")
+def test_requester_user_name(test_requester_project_name) -> str:
+    return test_requester_project_name
 
 
 @pytest.fixture(scope="module")
@@ -88,31 +105,83 @@ def _create_test_project(session, name) -> sdk_project.Project:
 
 
 @pytest.fixture(scope="module")
-def test_source_project(
+def test_owner_source_project(
     base_source_session,
-    test_project_name,
+    test_owner_project_name,
 ) -> Generator[sdk_project.Project]:
-    LOG.info("Creating source test project: %s", test_project_name)
-    project = _create_test_project(base_source_session, test_project_name)
+    LOG.info("Creating source owner test project: %s", test_owner_project_name)
+    project = _create_test_project(base_source_session, test_owner_project_name)
 
     yield project
 
-    LOG.info("Deleting source test project: %s", test_project_name)
+    LOG.info("Deleting source owner test project: %s", test_owner_project_name)
     base_source_session.identity.delete_project(project)
 
 
 @pytest.fixture(scope="module")
-def test_destination_project(
-    base_destination_session,
-    test_project_name,
+def test_requester_source_project(
+    base_config,
+    base_source_session,
+    test_requester_project_name,
+    test_owner_source_project,
 ) -> Generator[sdk_project.Project]:
-    LOG.info("Creating destination test project: %s", test_project_name)
-    project = _create_test_project(base_destination_session, test_project_name)
+    # TODO: use a separate domain.
+    if base_config.multitenant_mode:
+        LOG.info(
+            "Creating source requester test project: %s", test_requester_project_name
+        )
+        project = _create_test_project(base_source_session, test_requester_project_name)
+
+        yield project
+
+        LOG.info(
+            "Deleting source requester test project: %s", test_requester_project_name
+        )
+        base_source_session.identity.delete_project(project)
+    else:
+        yield test_owner_source_project
+
+
+@pytest.fixture(scope="module")
+def test_owner_destination_project(
+    base_config,
+    base_destination_session,
+    test_owner_project_name,
+) -> Generator[sdk_project.Project]:
+    LOG.info("Creating destination owner test project: %s", test_owner_project_name)
+    project = _create_test_project(base_destination_session, test_owner_project_name)
 
     yield project
 
-    LOG.info("Deleting destination test project: %s", test_project_name)
+    LOG.info("Deleting destination owner test project: %s", test_owner_project_name)
     base_destination_session.identity.delete_project(project)
+
+
+@pytest.fixture(scope="module")
+def test_requester_destination_project(
+    base_config,
+    base_destination_session,
+    test_requester_project_name,
+    test_owner_destination_project,
+) -> Generator[sdk_project.Project]:
+    if base_config.multitenant_mode:
+        LOG.info(
+            "Creating destination requester test project: %s",
+            test_requester_project_name,
+        )
+        project = _create_test_project(
+            base_destination_session, test_requester_project_name
+        )
+
+        yield project
+
+        LOG.info(
+            "Deleting destination requester test project: %s",
+            test_requester_project_name,
+        )
+        base_destination_session.identity.delete_project(project)
+    else:
+        yield test_owner_destination_project
 
 
 def _create_test_user(session, project, user_name, roles) -> sdk_user.User:
@@ -130,20 +199,25 @@ def _create_test_user(session, project, user_name, roles) -> sdk_user.User:
 
 
 @pytest.fixture(scope="module")
-def test_source_user(
+def test_owner_source_user(
     base_config,
     base_source_session,
-    test_source_project,
-    test_user_name,
+    test_owner_source_project,
+    test_owner_user_name,
     test_user_roles,
     test_source_session,
 ) -> Generator[sdk_user.User]:
     LOG.info(
-        "Creating source test user: %s, roles: %s", test_user_name, test_user_roles
+        "Creating source test user: %s, roles: %s",
+        test_owner_user_name,
+        test_user_roles,
     )
 
     user = _create_test_user(
-        base_source_session, test_source_project, test_user_name, test_user_roles
+        base_source_session,
+        test_owner_source_project,
+        test_owner_user_name,
+        test_user_roles,
     )
 
     yield user
@@ -160,21 +234,57 @@ def test_source_user(
 
 
 @pytest.fixture(scope="module")
-def test_destination_user(
+def test_requester_source_user(
+    base_config,
+    base_source_session,
+    test_requester_source_project,
+    test_owner_source_user,
+    test_requester_user_name,
+    test_user_roles,
+    test_source_session,
+) -> Generator[sdk_user.User]:
+    if base_config.multitenant_mode:
+        LOG.info(
+            "Creating source requester test user: %s, roles: %s",
+            test_requester_user_name,
+            test_user_roles,
+        )
+
+        user = _create_test_user(
+            base_source_session,
+            test_requester_source_project,
+            test_requester_user_name,
+            test_user_roles,
+        )
+
+        yield user
+
+        # The requester user is not expected to own any resources, as such we'll
+        # skip the project purge operation, which is time consuming (~30s).
+        LOG.info("Deleting requester source user: %s", user.name)
+        base_source_session.identity.delete_user(user)
+    else:
+        yield test_owner_source_user
+
+
+@pytest.fixture(scope="module")
+def test_owner_destination_user(
     base_config,
     base_destination_session,
-    test_destination_project,
-    test_user_name,
+    test_owner_destination_project,
+    test_owner_user_name,
     test_user_roles,
     test_destination_session,
 ) -> Generator[sdk_user.User]:
     LOG.info(
-        "Creating destination test user: %s, roles: %s", test_user_name, test_user_roles
+        "Creating destination test user: %s, roles: %s",
+        test_owner_user_name,
+        test_user_roles,
     )
     user = _create_test_user(
         base_destination_session,
-        test_destination_project,
-        test_user_name,
+        test_owner_destination_project,
+        test_owner_user_name,
         test_user_roles,
     )
 
@@ -192,6 +302,33 @@ def test_destination_user(
 
 
 @pytest.fixture(scope="module")
+def test_requester_destination_user(
+    base_config,
+    base_destination_session,
+    test_requester_destination_project,
+    test_requester_user_name,
+    test_user_roles,
+    test_destination_session,
+) -> Generator[sdk_user.User]:
+    LOG.info(
+        "Creating destination requester test user: %s, roles: %s",
+        test_requester_user_name,
+        test_user_roles,
+    )
+    user = _create_test_user(
+        base_destination_session,
+        test_requester_destination_project,
+        test_requester_user_name,
+        test_user_roles,
+    )
+
+    yield user
+
+    LOG.info("Deleting destination user: %s", user.name)
+    base_destination_session.identity.delete_user(user)
+
+
+@pytest.fixture(scope="module")
 def test_config_path(tmpdir_factory) -> Path:
     """The sunbeam-migrate config used for this class of tests."""
     return Path(
@@ -200,9 +337,15 @@ def test_config_path(tmpdir_factory) -> Path:
 
 
 @pytest.fixture(scope="module")
-def test_cloud_config_path(tmpdir_factory) -> Path:
+def test_owner_cloud_config_path(tmpdir_factory) -> Path:
     """The Openstack clouds.yaml used for this class of tests."""
-    return Path(tmpdir_factory.mktemp("sunbeam_migrate").join("clouds.yaml"))
+    return Path(tmpdir_factory.mktemp("sunbeam_migrate").join("clouds-owner.yaml"))
+
+
+@pytest.fixture(scope="module")
+def test_requester_cloud_config_path(tmpdir_factory) -> Path:
+    """The Openstack clouds.yaml used for this class of tests."""
+    return Path(tmpdir_factory.mktemp("sunbeam_migrate").join("clouds-requester.yaml"))
 
 
 @pytest.fixture(scope="module")
@@ -211,70 +354,140 @@ def test_database_path(tmpdir_factory) -> Path:
     return Path(tmpdir_factory.mktemp("sunbeam_migrate").join("sqlite.db"))
 
 
-@pytest.fixture(scope="module")
-def test_config(
-    base_config,
-    test_config_path,
-    test_cloud_config_path,
-    test_database_path,
-    test_project_name,
-    test_user_name,
-) -> config.SunbeamMigrateConfig:
-    conf = config.SunbeamMigrateConfig(**base_config.model_dump())
-    conf.database_file = test_database_path
-    conf.cloud_config_file = test_cloud_config_path
-
-    with open(base_config.cloud_config_file) as f:
+def _prepare_cloud_config(
+    base_config: config.SunbeamMigrateConfig,
+    project_name: str,
+    user_name: str,
+    output_path: Path,
+):
+    assert base_config.cloud_config_file
+    with base_config.cloud_config_file.open() as f:
         cloud_config = yaml.safe_load(f)
 
     clouds_section = cloud_config["clouds"]
     source_auth = clouds_section[base_config.source_cloud_name]["auth"]
     destination_auth = clouds_section[base_config.destination_cloud_name]["auth"]
 
-    source_auth["project_name"] = test_project_name
-    source_auth["username"] = test_user_name
+    source_auth["project_name"] = project_name
+    source_auth["username"] = user_name
     source_auth["password"] = TEST_USER_PASSWORD
-    destination_auth["project_name"] = test_project_name
-    destination_auth["username"] = test_user_name
+    destination_auth["project_name"] = project_name
+    destination_auth["username"] = user_name
     destination_auth["password"] = TEST_USER_PASSWORD
 
-    assert conf.cloud_config_file
-
-    with conf.cloud_config_file.open("w") as f:
+    with output_path.open("w") as f:
         f.write(yaml.dump(cloud_config))
+
+
+@pytest.fixture(scope="module")
+def test_requester_cloud_config(
+    base_config,
+    test_requester_project_name,
+    test_requester_user_name,
+    test_requester_cloud_config_path,
+):
+    LOG.info("Preparing requester clouds.yaml: %s", test_requester_cloud_config_path)
+    _prepare_cloud_config(
+        base_config,
+        test_requester_project_name,
+        test_requester_user_name,
+        test_requester_cloud_config_path,
+    )
+
+
+@pytest.fixture(scope="module")
+def test_owner_cloud_config(
+    base_config,
+    test_owner_project_name,
+    test_owner_user_name,
+    test_owner_cloud_config_path,
+):
+    LOG.info("Preparing owner clouds.yaml: %s", test_owner_cloud_config_path)
+    _prepare_cloud_config(
+        base_config,
+        test_owner_project_name,
+        test_owner_user_name,
+        test_owner_cloud_config_path,
+    )
+
+
+@pytest.fixture(scope="module")
+def test_config(
+    base_config,
+    test_config_path,
+    test_requester_cloud_config_path,
+    test_database_path,
+    test_requester_cloud_config,
+) -> config.SunbeamMigrateConfig:
+    LOG.info("Preparing sunbeam-migrate config: %s", test_config_path)
+    conf = config.SunbeamMigrateConfig(**base_config.model_dump())
+    conf.database_file = test_database_path
+    conf.cloud_config_file = test_requester_cloud_config_path
 
     with test_config_path.open("w") as f:
         dump = json.loads(conf.model_dump_json())
         f.write(yaml.dump(dump))
 
-    LOG.info("Prepared test config: %s", test_config_path)
     return conf
 
 
 @pytest.fixture(scope="module")
-def test_source_session(
-    test_config,
-    test_cloud_config_path,
+def test_owner_source_session(
+    base_config,
+    test_owner_cloud_config_path,
+    test_owner_cloud_config,
 ):
     return test_utils.get_openstack_session(
-        test_cloud_config_path, test_config.source_cloud_name
+        test_owner_cloud_config_path, base_config.source_cloud_name
     )
 
 
 @pytest.fixture(scope="module")
-def test_destination_session(
-    test_config,
-    test_cloud_config_path,
+def test_requester_source_session(
+    base_config,
+    test_owner_cloud_config_path,
 ):
     return test_utils.get_openstack_session(
-        test_cloud_config_path, test_config.destination_cloud_name
+        test_requester_cloud_config_path, base_config.source_cloud_name
     )
+
+
+@pytest.fixture(scope="module")
+def test_owner_destination_session(
+    test_config,
+    test_owner_cloud_config_path,
+):
+    return test_utils.get_openstack_session(
+        test_owner_cloud_config_path, test_config.destination_cloud_name
+    )
+
+
+@pytest.fixture(scope="module")
+def test_requester_destination_session(
+    test_config,
+    test_requester_cloud_config_path,
+):
+    return test_utils.get_openstack_session(
+        test_requester_cloud_config_path, test_config.destination_cloud_name
+    )
+
+
+@pytest.fixture(scope="module")
+def test_source_session(test_owner_source_session):
+    yield test_owner_source_session
+
+
+@pytest.fixture(scope="module")
+def test_destination_session(test_owner_destination_session):
+    yield test_owner_destination_session
 
 
 @pytest.fixture(scope="module")
 def test_credentials(
-    test_source_user,
-    test_destination_user,
+    test_owner_source_user,
+    test_owner_destination_user,
+    test_requester_source_user,
+    test_requester_destination_user,
 ):
     """Create temporary credentials on both clouds."""
     pass

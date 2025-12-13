@@ -3,10 +3,11 @@
 
 import logging
 import subprocess
+from typing import Any
 
 from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
-from sunbeam_migrate.utils import manila_utils
+from sunbeam_migrate.utils import client_utils, manila_utils
 
 CONF = config.get_config()
 LOG = logging.getLogger()
@@ -24,7 +25,7 @@ class ShareHandler(base.BaseMigrationHandler):
 
         These filters can be specified when initiating batch migrations.
         """
-        return ["owner_id"]
+        return ["project_id"]
 
     def get_associated_resource_types(self) -> list[str]:
         """Get a list of associated resource types.
@@ -35,11 +36,15 @@ class ShareHandler(base.BaseMigrationHandler):
 
     def get_associated_resources(self, resource_id: str) -> list[base.Resource]:
         """Get a list of associated resources."""
-        associated_resources = []
+        associated_resources: list[base.Resource] = []
 
         source_share = self._source_session.shared_file_system.get_share(resource_id)
         if not source_share:
             raise exception.NotFound(f"Share not found: {resource_id}")
+
+        self._report_identity_dependencies(
+            associated_resources, project_id=source_share.project_id
+        )
 
         if source_share.share_type:
             associated_resources.append(
@@ -76,6 +81,8 @@ class ShareHandler(base.BaseMigrationHandler):
                 "NFS is the only supported share protocol at the moment."
             )
 
+        # TODO: Manila ignores the project_id parameter, we'll need to
+        # impersonate the destination user (e.g. using application credentials).
         share_kwargs = self._build_share_kwargs(
             source_share, migrated_associated_resources
         )
@@ -116,6 +123,12 @@ class ShareHandler(base.BaseMigrationHandler):
             if value not in (None, {}):
                 kwargs[field] = value
 
+        identity_kwargs = self._get_identity_build_kwargs(
+            migrated_associated_resources,
+            source_project_id=source_share.project_id,
+        )
+        kwargs.update(identity_kwargs)
+
         if source_share.share_type and CONF.preserve_share_type:
             destination_share_type_id = self._get_associated_resource_destination_id(
                 "share-type",
@@ -153,7 +166,7 @@ class ShareHandler(base.BaseMigrationHandler):
             ]
             subprocess.check_call(cmd, text=True)
 
-    def get_source_resource_ids(self, resource_filters: dict[str, str]) -> list[str]:
+    def get_source_resource_ids(self, resource_filters: dict[str, Any]) -> list[str]:
         """Returns a list of resource ids based on the specified filters.
 
         Raises an exception if any of the filters are unsupported.
@@ -161,11 +174,16 @@ class ShareHandler(base.BaseMigrationHandler):
         self._validate_resource_filters(resource_filters)
 
         query_params = {}
-        if "owner_id" in resource_filters:
-            query_params["project_id"] = resource_filters["owner_id"]
+        if "project_id" in resource_filters:
+            query_params["project_id"] = resource_filters["project_id"]
+            query_params["all_tenants"] = True
+            query_params["is_public"] = False
 
         resource_ids: list[str] = []
-        for share in self._source_session.shared_file_system.shares(**query_params):
+
+        source_manila = client_utils.get_manila_client(self._source_session)
+        # The sdk filters seem broken, we'll use the native client.
+        for share in source_manila.shares.list(search_opts=query_params):
             resource_ids.append(share.id)
         return resource_ids
 
