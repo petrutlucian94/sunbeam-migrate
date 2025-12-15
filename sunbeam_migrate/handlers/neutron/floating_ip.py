@@ -227,7 +227,7 @@ class FloatingIPHandler(base.BaseMigrationHandler):
         Return the router ID or None if not found.
         """
         # Get network id for the port from floating IP
-        port_details = floating_ip.port_details
+        port_details = floating_ip.port_details or {}
         port_network_id = port_details.get("network_id")
 
         # Search for routers with interfaces on the subnets
