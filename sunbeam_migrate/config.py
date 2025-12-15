@@ -74,7 +74,7 @@ class SunbeamMigrateConfig(BaseModel):
     #
     # sunbeam-migrate will transparently assign the member role to the user
     # that initiated the migration.
-    member_role_name = "member"
+    member_role_name: str = "member"
 
     def load_config(self, path: Path):
         """Load the configuration from the specified file."""

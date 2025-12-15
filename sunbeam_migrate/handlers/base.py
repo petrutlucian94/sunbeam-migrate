@@ -160,45 +160,30 @@ class BaseMigrationHandler(abc.ABC):
             share_api_version=constants.MANILA_MICROVERSION,
         )
 
-    def _assign_project_role_to_current_use(
+    def _assign_project_role_to_current_user(
         self,
         session,
         role_name: str,
         project_id: str,
     ):
-        user_id = session.authorize().user_id
-
         LOG.debug(
             "Ensuring that user %s has role %s in project %s.",
-            user_id,
+            session.current_user_id,
             project_id,
             role_name,
         )
-        role_assignments = session.identity.role_assignments(
-            user_id=user_id, project_id=project_id
-        )
-        for role_assignment in role_assignments:
-            role_id = role_assignments.role["id"]
-            role = session.identity.get_role(role_id, ignore_missing=False)
-            if role.name == role_name:
-                LOG.debug(
-                    "User %s already has role %s in project %s.",
-                    user_id,
-                    project_id,
-                    role_name,
-                )
-                return
-
-        role = session.identity.find_role(name_or_id=role_name, ignore_missing=False)
-        session.identity.assign_project_role_to_user(project_id, user_id, role)
-
-        LOG.info(
-            "Assigned role %s (%s) to user %s in project %s.",
+        session.grant_role(
             role_name,
-            role.id,
-            user_id,
-            project_id,
+            session.current_user_id,
+            project=project_id,
+            wait=True,
         )
+
+    def _owner_scoped_session(self, session, role_names: list[str], project_id: str):
+        for role_name in role_names:
+            self._assign_project_role_to_current_user(session, role_name, project_id)
+        project = session.identity.get_project(project_id)
+        return session.connect_as_project(project)
 
     @property
     def _source_session(self):

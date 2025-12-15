@@ -101,11 +101,11 @@ class VolumeHandler(base.BaseMigrationHandler):
 
         return associated_resources
 
-    def _upload_source_volume_to_image(self, source_volume):
+    def _upload_source_volume_to_image(self, owner_source_session, source_volume):
         rand = int.from_bytes(os.urandom(4))
         image_name = f"volmigr-{source_volume.id}-{rand}"
         LOG.info("Uploading %s volume to image: %s", source_volume.id, image_name)
-        response = self._source_session.block_storage.upload_volume_to_image(
+        response = owner_source_session.block_storage.upload_volume_to_image(
             source_volume, image_name, force=True
         )
         image_id = response["image_id"]
@@ -138,7 +138,26 @@ class VolumeHandler(base.BaseMigrationHandler):
         if not source_volume:
             raise exception.NotFound(f"Volume not found: {resource_id}")
 
-        source_image = self._upload_source_volume_to_image(source_volume)
+        identity_kwargs = self._get_identity_build_kwargs(
+            migrated_associated_resources,
+            source_project_id=source_volume.project_id,
+            source_user_id=source_volume.user_id,
+        )
+        if CONF.multitenant_mode:
+            owner_source_session = self._owner_scoped_session(
+                self._source_session,
+                [CONF.member_role_name],
+                source_volume.project_id)
+            owner_destination_session = self._owner_scoped_session(
+                self._destination_session,
+                [CONF.member_role_name],
+                identity_kwargs["project_id"])
+        else:
+            owner_source_session = self._source_session
+            owner_destination_session = self._destination_session
+
+        source_image = self._upload_source_volume_to_image(
+            owner_source_session, source_volume)
         destination_image_id: str | None = None
         try:
             image_migration = self.manager.perform_individual_migration(
@@ -153,23 +172,7 @@ class VolumeHandler(base.BaseMigrationHandler):
                 source_volume, destination_image_id, migrated_associated_resources
             )
 
-            identity_kwargs = self._get_identity_build_kwargs(
-                migrated_associated_resources,
-                source_project_id=source_volume.project_id,
-                source_user_id=source_volume.user_id,
-            )
-            if CONF.multitenant_mode:
-                remote_project_id = identity_kwargs["project_id"]
-                self._assign_project_role_to_current_use(
-                    self._destination_session, CONF.member_role_name, remote_project_id
-                )
-                destination_session = self._destination_session.connect_as_project(
-                    remote_project_id
-                )
-            else:
-                destination_session = self._destination_session
-
-            destination_volume = destination_session.block_storage.create_volume(
+            destination_volume = owner_destination_session.block_storage.create_volume(
                 **volume_kwargs
             )
             LOG.info("Waiting for volume provisioning: %s", destination_volume.id)
