@@ -39,24 +39,33 @@ class SunbeamMigrateConfig(BaseModel):
     # The identity resources (domain, project, user) will be treated as
     # dependencies and migrated automatically if "--include-dependencies" is set.
     multitenant_mode: bool = True
+
     image_transfer_chunk_size: int = 32 * 1024 * 1024  # 32MB
+
+    volume_upload_timeout: int = 1800
     # Timeout for load balancer provisioning during migration.
     load_balancer_migration_timeout: int = 300
+    # How much to wait for OpenStack resource provisioning.
+    resource_creation_timeout: int = 300
+
     # Preserve the volume type when migrating volumes. Defaults to "false" for
     # increased compatibility. If enabled, the volume types will be migrated and
     # used when transferring volumes. Manually created types may be registered
     # using the "register-external" command.
-    preserve_volume_type: bool | None = False
+    preserve_volume_type: bool = False
     # Preserve the volume availability zone when migrating volumes.
     # Defaults to "false" for increased compatibility.
-    preserve_volume_availability_zone: bool | None = False
-    preserve_instance_availability_zone: bool | None = False
-    preserve_load_balancer_availability_zone: bool | None = False
-    volume_upload_timeout: int = 1800
+    preserve_volume_availability_zone: bool = False
+    preserve_instance_availability_zone: bool = False
+    preserve_load_balancer_availability_zone: bool = False
     # Preserve the Manila share type.
-    preserve_share_type: bool | None = False
-    # How much to wait for OpenStack resource provisioning.
-    resource_creation_timeout: int = 300
+    preserve_share_type: bool = False
+    # Preserve the network segmentation ID (e.g. VLAN tag or tunnel VNI).
+    # This is disabled by default since it may conflict with other existing
+    # networks from the destination cloud.
+    preserve_network_segmentation_id: bool = False
+    preserve_port_mac_address: bool = False
+
     # The following directory is used to store temporary data and mounts
     # used as part of the migration process.
     temporary_migration_dir: Path = Path(

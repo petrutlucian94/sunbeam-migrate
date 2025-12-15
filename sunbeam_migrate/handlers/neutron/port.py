@@ -107,14 +107,16 @@ class PortHandler(base.BaseMigrationHandler):
             "dns_name",
             "extra_dhcp_opts",
             # "fixed_ips",  # Handled explicitly with subnet ID mapping
-            "mac_address",
             "name",
             "port_security_enabled",
-            "qos_policy_id",
+            # "qos_policy_id",
             # "resource_request",
             "tags",
             # "trunk_details",
         ]
+        if CONF.preserve_port_mac_address:
+            fields.append("mac_address")
+
         kwargs = {}
         for field in fields:
             value = getattr(source_port, field, None)

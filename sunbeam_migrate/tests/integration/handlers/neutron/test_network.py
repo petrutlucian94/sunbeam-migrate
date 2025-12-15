@@ -5,7 +5,7 @@ from sunbeam_migrate.tests.integration import utils as test_utils
 from sunbeam_migrate.tests.integration.handlers.neutron import utils as neutron_utils
 
 
-def _check_migrated_network(source_network, destination_network):
+def _check_migrated_network(test_config, source_network, destination_network):
     fields = [
         "availability_zone_hints",
         "description",
@@ -19,9 +19,11 @@ def _check_migrated_network(source_network, destination_network):
         "name",
         "provider_network_type",
         "provider_physical_network",
-        "provider_segmentation_id",
         "segments",
     ]
+    if test_config.preserve_network_segmentation_id:
+        fields.append("provider_segmentation_id")
+
     for field in fields:
         source_attr = getattr(source_network, field)
         dest_attr = getattr(destination_network, field)
@@ -56,6 +58,7 @@ def _check_migrated_subnet(source_subnet, destination_subnet):
 
 def test_migrate_network_and_cleanup(
     request,
+    test_config,
     test_config_path,
     test_credentials,
     test_source_session,
@@ -83,7 +86,7 @@ def test_migrate_network_and_cleanup(
         lambda: test_destination_session.network.delete_network(dest_network.id)
     )
 
-    _check_migrated_network(network, dest_network)
+    _check_migrated_network(test_config, network, dest_network)
 
     assert not test_source_session.network.find_network(network.id), (
         "cleanup-source didn't remove the resource"
@@ -92,6 +95,7 @@ def test_migrate_network_and_cleanup(
 
 def test_migrate_network_with_members(
     request,
+    test_config,
     test_config_path,
     test_credentials,
     test_source_session,
@@ -122,7 +126,7 @@ def test_migrate_network_with_members(
         lambda: test_destination_session.network.delete_network(dest_network.id)
     )
 
-    _check_migrated_network(network, dest_network)
+    _check_migrated_network(test_config, network, dest_network)
 
     dest_subnets = list(
         test_destination_session.network.subnets(network_id=dest_network.id)

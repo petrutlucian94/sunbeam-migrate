@@ -96,17 +96,15 @@ class NetworkHandler(base.BaseMigrationHandler):
             "name",
             "provider_network_type",
             "provider_physical_network",
-            "provider_segmentation_id",
             "segments",
         ]
+        if CONF.preserve_network_segmentation_id:
+            fields.append("provider_segmentation_id")
         kwargs = {}
         for field in fields:
             value = getattr(source_network, field, None)
             if value:
                 kwargs[field] = value
-
-        # TODO: add a setting called "preserve_segmentation_id" and default to False.
-        # Otherwise we risk conflicts with other existing networks.
 
         identity_kwargs = self._get_identity_build_kwargs(
             migrated_associated_resources,
