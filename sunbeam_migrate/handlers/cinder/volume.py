@@ -145,19 +145,20 @@ class VolumeHandler(base.BaseMigrationHandler):
         )
         if CONF.multitenant_mode:
             owner_source_session = self._owner_scoped_session(
-                self._source_session,
-                [CONF.member_role_name],
-                source_volume.project_id)
+                self._source_session, [CONF.member_role_name], source_volume.project_id
+            )
             owner_destination_session = self._owner_scoped_session(
                 self._destination_session,
                 [CONF.member_role_name],
-                identity_kwargs["project_id"])
+                identity_kwargs["project_id"],
+            )
         else:
             owner_source_session = self._source_session
             owner_destination_session = self._destination_session
 
         source_image = self._upload_source_volume_to_image(
-            owner_source_session, source_volume)
+            owner_source_session, source_volume
+        )
         destination_image_id: str | None = None
         try:
             image_migration = self.manager.perform_individual_migration(

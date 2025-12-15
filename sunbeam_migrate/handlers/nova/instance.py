@@ -116,12 +116,12 @@ class InstanceHandler(base.BaseMigrationHandler):
 
         return associated_resources
 
-    def _upload_instance_to_image(self, source_instance):
+    def _upload_instance_to_image(self, owner_source_session, source_instance):
         """Upload instance to Glance image."""
         rand = int.from_bytes(os.urandom(4))
         image_name = f"instmigr-{source_instance.id}-{rand}"
         LOG.info("Uploading instance %s to image: %s", source_instance.id, image_name)
-        image = self._source_session.compute.create_server_image(
+        image = owner_source_session.compute.create_server_image(
             source_instance, image_name
         )
         LOG.info("Waiting for instance upload to complete. Image id: %s", image.id)
@@ -188,12 +188,33 @@ class InstanceHandler(base.BaseMigrationHandler):
             source_instance.flavor.id
         )
 
+        identity_kwargs = self._get_identity_build_kwargs(
+            migrated_associated_resources,
+            source_project_id=source_instance.project_id,
+        )
+        if CONF.multitenant_mode:
+            owner_source_session = self._owner_scoped_session(
+                self._source_session,
+                [CONF.member_role_name],
+                source_instance.project_id,
+            )
+            owner_destination_session = self._owner_scoped_session(
+                self._destination_session,
+                [CONF.member_role_name],
+                identity_kwargs["project_id"],
+            )
+        else:
+            owner_source_session = self._source_session
+            owner_destination_session = self._destination_session
+
         destination_image_id: str | None = None
         source_image: Any = None
 
         # Handle image-booted instances: upload to Glance and migrate image
         if source_instance.image and source_instance.image.get("id"):
-            source_image = self._upload_instance_to_image(source_instance)
+            source_image = self._upload_instance_to_image(
+                owner_source_session, source_instance
+            )
             try:
                 image_migration = self.manager.perform_individual_migration(
                     resource_type="image",
@@ -221,7 +242,7 @@ class InstanceHandler(base.BaseMigrationHandler):
             )
 
             # Create instance on destination
-            destination_instance = self._destination_session.compute.create_server(
+            destination_instance = owner_destination_session.compute.create_server(
                 **instance_kwargs
             )
 
@@ -306,12 +327,6 @@ class InstanceHandler(base.BaseMigrationHandler):
         )
         if block_device_mapping:
             kwargs["block_device_mapping_v2"] = block_device_mapping
-
-        identity_kwargs = self._get_identity_build_kwargs(
-            migrated_associated_resources,
-            source_project_id=source_instance.project_id,
-        )
-        kwargs.update(identity_kwargs)
 
         # Optional fields
         optional_fields = [
