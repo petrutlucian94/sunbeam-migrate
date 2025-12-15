@@ -119,7 +119,7 @@ def test_migrate_floating_ip_batch_with_filter(
     test_credentials,
     test_source_session,
     test_destination_session,
-    test_source_project,
+    test_owner_source_project,
 ):
     floating_ips = []
     networks = []
@@ -154,7 +154,7 @@ def test_migrate_floating_ip_batch_with_filter(
             "start-batch",
             "--resource-type=floating-ip",
             "--filter",
-            f"project-id:{test_source_project.id}",
+            f"project-id:{test_owner_source_project.id}",
             "--include-dependencies",
             "--cleanup-source",
         ],
