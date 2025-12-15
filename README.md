@@ -376,20 +376,15 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
 +-------------------+--------------------------------------+
 ```
 
-## TODOs
+## Potential future improvements
 
-* Add new resource handlers.
+* Add new resource migration handlers.
 * Implement manager unit tests
 * Instead of dry runs, have migration plans similar to Terraform plans. The user could then
   see the resources that are going to be migrated, trigger the migration plan and then check
   the migration status for the specified plan.
   The resource dependencies could be modeled through a tree.
 * Propagate the dry run to linked resources.
-* Finalize the implementation for cross-tenant migrations and add integration tests.
-  * we can add a "multitenant_mode" option.
-  * if enabled, projects and users may be reported as associated resources.
-* Add batch migration tests for every supported resource type.
-* Replace "owner-id" filters with "project-id" and/or "user-id".
 * Consider adding an option specifying whether to identify existing destination resources
   by name, skipping those that already exist.
   * the user should be able to control the resource types that are identified by name, e.g.
@@ -404,16 +399,12 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
     * can be skipped completely or just the actual address
   * router IP
 * Attach floating ips to instance ports
-* Consider using temporary users to migrate Barbican secrets owned by
-  other projects
+* Consider temporarily adding the admin user to Barbican/Manila migrated projects
+  and issue the requests using the given project
   * Barbican doesn't allow us to retrieve secrets owned by other projects
-  * We might as well add a temporary user to that tenant and use it to
-    identify and migrate secrets
-  * This behavior can be configurable
-  * Another option would be to temporarily add the user to the
-    target project.
   * Manila is also affected, it ignores the "project_id" parameter
     when creating shares.
+  * This behavior can be configurable
 
 ## Functional tests
 
