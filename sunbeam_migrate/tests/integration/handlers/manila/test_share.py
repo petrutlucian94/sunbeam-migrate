@@ -66,6 +66,7 @@ def test_migrate_share_with_cleanup(
         ],
     )
 
+    # TODO: ensure that the owner is preserved in multi-tenant mode.
     dest_share_id = test_utils.get_destination_resource_id(
         test_config_path, "share", share.id
     )

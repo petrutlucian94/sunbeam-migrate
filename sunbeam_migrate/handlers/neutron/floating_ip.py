@@ -23,7 +23,7 @@ class FloatingIPHandler(base.BaseMigrationHandler):
 
         These filters can be specified when initiating batch migrations.
         """
-        return ["owner_id"]
+        return ["project_id"]
 
     def get_associated_resource_types(self) -> list[str]:
         """Get a list of associated resource types.
@@ -38,7 +38,11 @@ class FloatingIPHandler(base.BaseMigrationHandler):
         if not source_fip:
             raise exception.NotFound(f"Floating IP not found: {resource_id}")
 
-        associated_resources = []
+        associated_resources: list[base.Resource] = []
+        self._report_identity_dependencies(
+            associated_resources, project_id=source_fip.project_id
+        )
+
         floating_network_id = source_fip.floating_network_id
         if floating_network_id:
             associated_resources.append(
@@ -181,6 +185,12 @@ class FloatingIPHandler(base.BaseMigrationHandler):
                     source_router_id,
                 )
 
+        identity_kwargs = self._get_identity_build_kwargs(
+            migrated_associated_resources,
+            source_project_id=source_fip.project_id,
+        )
+        kwargs.update(identity_kwargs)
+
         destination_fip = self._destination_session.network.create_ip(**kwargs)
         return destination_fip.id
 
@@ -192,8 +202,8 @@ class FloatingIPHandler(base.BaseMigrationHandler):
         self._validate_resource_filters(resource_filters)
 
         query_filters = {}
-        if "owner_id" in resource_filters:
-            query_filters["project_id"] = resource_filters["owner_id"]
+        if "project_id" in resource_filters:
+            query_filters["project_id"] = resource_filters["project_id"]
 
         resource_ids = []
         for resource in self._source_session.network.ips(**query_filters):
