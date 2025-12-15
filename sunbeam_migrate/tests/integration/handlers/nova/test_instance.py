@@ -105,6 +105,7 @@ def test_migrate_instance_booted_from_image(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     """Test instance migration with all associated resources."""
     assert base_config.image_id, "test_config.image_id is required"
@@ -148,10 +149,11 @@ def test_migrate_instance_booted_from_image(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=instance",
             "--include-dependencies",
-            instance.id,
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
         ],
     )
 
@@ -205,6 +207,7 @@ def test_migrate_instance_booted_from_volume(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     """Test instance migration booted from volume with additional volume."""
     assert base_config.image_id, "test_config.image_id is required"
@@ -267,10 +270,11 @@ def test_migrate_instance_booted_from_volume(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=instance",
             "--include-dependencies",
-            instance.id,
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
         ],
     )
 

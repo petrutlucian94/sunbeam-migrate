@@ -45,6 +45,7 @@ def test_migrate_floating_ip_with_dependencies_and_cleanup(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     external_network = neutron_utils.create_test_network(
         test_source_session, is_router_external=True
@@ -68,11 +69,12 @@ def test_migrate_floating_ip_with_dependencies_and_cleanup(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=floating-ip",
             "--include-dependencies",
             "--cleanup-source",
-            floating_ip.id,
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
         ],
     )
 
@@ -152,7 +154,7 @@ def test_migrate_floating_ip_batch_with_filter(
             "start-batch",
             "--resource-type=floating-ip",
             "--filter",
-            f"owner-id:{test_source_project.id}",
+            f"project-id:{test_source_project.id}",
             "--include-dependencies",
             "--cleanup-source",
         ],

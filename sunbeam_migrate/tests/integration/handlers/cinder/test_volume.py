@@ -62,6 +62,7 @@ def test_migrate_volume_with_cleanup(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     # We intend to cover volume types, so let's set the following flag.
     test_config.preserve_volume_type = True
@@ -79,11 +80,12 @@ def test_migrate_volume_with_cleanup(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=volume",
-            "--cleanup-source",
             "--include-dependencies",
-            volume.id,
+            "--cleanup-source",
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
         ],
     )
 

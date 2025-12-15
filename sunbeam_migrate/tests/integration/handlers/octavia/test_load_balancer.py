@@ -280,6 +280,7 @@ def test_migrate_simple_load_balancer_and_cleanup(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     # Create network and subnet for VIP
     network = neutron_utils.create_test_network(test_source_session)
@@ -310,11 +311,12 @@ def test_migrate_simple_load_balancer_and_cleanup(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=load-balancer",
             "--include-dependencies",
             "--cleanup-source",
-            lb.id,
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
         ],
     )
 
@@ -528,6 +530,7 @@ def test_migrate_load_balancer_with_listener_pool_and_members(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     # Create network and subnet for VIP
     network = neutron_utils.create_test_network(test_source_session)
@@ -576,10 +579,11 @@ def test_migrate_load_balancer_with_listener_pool_and_members(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=load-balancer",
             "--include-dependencies",
-            lb.id,
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
         ],
     )
 

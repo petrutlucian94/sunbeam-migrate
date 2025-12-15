@@ -27,13 +27,20 @@ def test_migrate_router_and_cleanup(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     router = neutron_utils.create_test_router(test_source_session)
     request.addfinalizer(lambda: test_source_session.network.delete_router(router.id))
 
     test_utils.call_migrate(
         test_config_path,
-        ["start", "--resource-type=router", "--cleanup-source", router.id],
+        [
+            "start-batch",
+            "--resource-type=router",
+            "--cleanup-source",
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
+        ],
     )
 
     dest_router = test_destination_session.network.find_router(router.name)
@@ -55,6 +62,7 @@ def test_migrate_router_with_dependencies_and_members(
     test_credentials,
     test_source_session,
     test_destination_session,
+    test_owner_source_project,
 ):
     # Create external network and subnet for gateway
     external_network = neutron_utils.create_test_network(
@@ -104,11 +112,12 @@ def test_migrate_router_with_dependencies_and_members(
     test_utils.call_migrate(
         test_config_path,
         [
-            "start",
+            "start-batch",
             "--resource-type=router",
             "--include-dependencies",
             "--include-members",
-            router.id,
+            "--filter",
+            f"project-id:{test_owner_source_project.id}",
         ],
     )
 
