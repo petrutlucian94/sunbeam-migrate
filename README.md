@@ -405,8 +405,8 @@ already provisioned instances.
   The resource dependencies could be modeled through a tree.
 * Propagate the dry run to linked resources.
 * Allow skipping properties that may cause conflicts on the destination cloud:
-  * net segmentation id
-  * mac addresses
+  * ~~net segmentation id~~
+  * ~~mac addresses~~
   * instance fixed IPs
   * floating IPs
     * can be skipped completely or just the actual address
