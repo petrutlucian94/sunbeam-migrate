@@ -405,6 +405,14 @@ $ sunbeam-migrate show fd91c637-7b91-4fb6-9bd6-afb84c9d79a1
   * Manila is also affected, it ignores the "project_id" parameter
     when creating shares.
   * This behavior can be configurable
+* Cross-tenant keypair migrations
+  * The keypairs do not have an unique ID. Cross-tenant requests must include
+    the keypair name and the project/user ID, even get/list.
+  * We'd need to include the owner information along with the resource id in:
+    * `get_source_resource_ids` -> may return a `Resource` object
+    * `perform_individual_migration`
+    * `get_associated_resources`
+    * The migration `start` command
 
 ## Functional tests
 

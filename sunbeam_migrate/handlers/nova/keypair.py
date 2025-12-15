@@ -65,7 +65,6 @@ class KeypairHandler(base.BaseMigrationHandler):
                 kwargs[field] = value
 
         # TODO: set the user id for cross-project (user) migrations.
-
         return kwargs
 
     def get_source_resource_ids(self, resource_filters: dict[str, str]) -> list[str]:
