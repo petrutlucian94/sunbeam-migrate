@@ -14,3 +14,6 @@
 .. _Canonical MAAS installation requirements: https://maas.io/docs/installation-requirements
 
 .. _Multipass: https://multipass.run
+
+
+.. _clouds yaml: https://docs.openstack.org/python-openstackclient/latest/configuration/index.html#clouds-yaml

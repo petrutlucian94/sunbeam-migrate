@@ -106,6 +106,7 @@ SHUTOFF
 SSD
 SimpleStreams
 StatefulSet
+Sqlite
 IOV
 TLS
 Terraform
