@@ -6,8 +6,10 @@ group rules.
 
 .. note:: Security group rules may reference other security groups (via ``remote_group_id``). Ensure all security groups are migrated before migrating rules. One simple workaround would be to perform the **security group batched migration** in two steps: one without ``--include-members`` and then another run with ``--include-members``.
 
-.. note:: Consider passing ``--include-dependencies`` if the multi-tenant mode
-is enabled in order to automatically recreate the Keystone resources.
+.. note::
+
+  Consider passing ``--include-dependencies`` if the multi-tenant mode
+  is enabled in order to automatically recreate the Keystone resources.
 
 .. code-block:: none
 

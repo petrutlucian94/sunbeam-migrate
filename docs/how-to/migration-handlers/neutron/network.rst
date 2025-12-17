@@ -3,8 +3,10 @@ Migrating networks
 
 Use the following command to migrate a network and all its belonging subnets.
 
-.. note:: Consider passing ``--include-dependencies`` if the multi-tenant mode
-is enabled in order to automatically recreate the Keystone resources.
+.. note::
+
+  Consider passing ``--include-dependencies`` if the multi-tenant mode
+  is enabled in order to automatically recreate the Keystone resources.
 
 .. code-block:: none
 

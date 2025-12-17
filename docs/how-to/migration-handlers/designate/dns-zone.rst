@@ -4,8 +4,10 @@ Migrating DNS zones and records
 Designate zones can be migrated with `--resource-type=dns-zone`. The handler
 recreates the DNS zone with all of its recordsets on the destination.
 
-.. note:: Consider passing ``--include-dependencies`` if the multi-tenant mode
-is enabled in order to automatically recreate the Keystone resources.
+.. note::
+
+  Consider passing ``--include-dependencies`` if the multi-tenant mode
+  is enabled in order to automatically recreate the Keystone resources.
 
 .. code-block:: none
 

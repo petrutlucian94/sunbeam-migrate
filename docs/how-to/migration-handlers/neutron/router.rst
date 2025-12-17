@@ -7,8 +7,10 @@ external gateway network. Note that it can also be migrated separately.
 Other subnets connected to the router can be automatically covered using
 ``--include-members``.
 
-.. note:: Consider passing ``--include-dependencies`` if the multi-tenant mode
-is enabled in order to automatically recreate the Keystone resources.
+.. note::
+
+  Consider passing ``--include-dependencies`` if the multi-tenant mode
+  is enabled in order to automatically recreate the Keystone resources.
 
 .. code-block:: none
 
