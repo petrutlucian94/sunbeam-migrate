@@ -25,7 +25,7 @@ def _create_test_load_balancer(session, vip_subnet_id, vip_network_id):
         status="ACTIVE",
         failures=["ERROR"],
         interval=2,
-        wait=CONF.load_balancer_migration_timeout,
+        wait=CONF.resource_creation_timeout,
     )
 
 
@@ -42,7 +42,7 @@ def _create_test_listener(session, lb_id, protocol_port=80):
         status="ACTIVE",
         failures=["ERROR"],
         interval=2,
-        wait=CONF.load_balancer_migration_timeout,
+        wait=CONF.resource_creation_timeout,
     )
     return session.load_balancer.get_listener(listener.id)
 
@@ -61,7 +61,7 @@ def _create_test_pool(session, lb_id, listener_id):
         status="ACTIVE",
         failures=["ERROR"],
         interval=2,
-        wait=CONF.load_balancer_migration_timeout,
+        wait=CONF.resource_creation_timeout,
     )
     return session.load_balancer.get_pool(pool.id)
 
@@ -80,7 +80,7 @@ def _create_test_member(session, lb, pool_id, address):
         status="ACTIVE",
         failures=["ERROR"],
         interval=2,
-        wait=CONF.load_balancer_migration_timeout,
+        wait=CONF.resource_creation_timeout,
     )
     return session.load_balancer.get_member(member.id, pool_id)
 
@@ -100,7 +100,7 @@ def _create_test_health_monitor(session, lb_id, pool_id):
         status="ACTIVE",
         failures=["ERROR"],
         interval=2,
-        wait=CONF.load_balancer_migration_timeout,
+        wait=CONF.resource_creation_timeout,
     )
     return session.load_balancer.get_health_monitor(health_monitor.id)
 
@@ -129,7 +129,7 @@ def _cleanup_destination_load_balancer(session, lb_id):
         status="ACTIVE",
         failures=["ERROR"],
         interval=2,
-        wait=CONF.load_balancer_migration_timeout,
+        wait=CONF.resource_creation_timeout,
     )
 
     for listener in session.load_balancer.listeners(loadbalancer_id=lb_id):
@@ -147,7 +147,7 @@ def _cleanup_destination_load_balancer(session, lb_id):
                             status="ACTIVE",
                             failures=["ERROR"],
                             interval=2,
-                            wait=CONF.load_balancer_migration_timeout,
+                            wait=CONF.resource_creation_timeout,
                         )
                     except openstack_exc.NotFoundException:
                         pass
@@ -165,7 +165,7 @@ def _cleanup_destination_load_balancer(session, lb_id):
                         status="ACTIVE",
                         failures=["ERROR"],
                         interval=2,
-                        wait=CONF.load_balancer_migration_timeout,
+                        wait=CONF.resource_creation_timeout,
                     )
                 except openstack_exc.NotFoundException:
                     pass
@@ -180,7 +180,7 @@ def _cleanup_destination_load_balancer(session, lb_id):
                 status="ACTIVE",
                 failures=["ERROR"],
                 interval=2,
-                wait=CONF.load_balancer_migration_timeout,
+                wait=CONF.resource_creation_timeout,
             )
         except openstack_exc.NotFoundException:
             pass
@@ -198,7 +198,7 @@ def _cleanup_destination_load_balancer(session, lb_id):
             status="DELETED",
             failures=["ERROR"],
             interval=2,
-            wait=CONF.load_balancer_migration_timeout,
+            wait=CONF.resource_creation_timeout,
         )
     except openstack_exc.NotFoundException:
         pass

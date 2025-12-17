@@ -34,6 +34,11 @@ class SunbeamMigrateConfig(BaseModel):
     database_file: Path = Path(
         os.path.expandvars("$HOME/.local/share/sunbeam-migrate/sqlite.db")
     )
+    # The directory used to store temporary files and mounts
+    # used as part of the migration process.
+    temporary_migration_dir: Path = Path(
+        os.path.expandvars("$HOME/.local/share/sunbeam-migrate/migration_dir")
+    )
     # The multitenant mode allows identifying and migrating resources owned by
     # another tenant. This requires admin privileges.
     # The identity resources (domain, project, user) will be treated as
@@ -43,8 +48,6 @@ class SunbeamMigrateConfig(BaseModel):
     image_transfer_chunk_size: int = 32 * 1024 * 1024  # 32MB
 
     volume_upload_timeout: int = 1800
-    # Timeout for load balancer provisioning during migration.
-    load_balancer_migration_timeout: int = 300
     # How much to wait for OpenStack resource provisioning.
     resource_creation_timeout: int = 300
 
@@ -66,11 +69,6 @@ class SunbeamMigrateConfig(BaseModel):
     preserve_network_segmentation_id: bool = False
     preserve_port_mac_address: bool = False
 
-    # The following directory is used to store temporary data and mounts
-    # used as part of the migration process.
-    temporary_migration_dir: Path = Path(
-        os.path.expandvars("$HOME/.local/share/sunbeam-migrate/migration_dir")
-    )
     # The local IP used to access Manila shares. A temporary share access
     # rule will be defined, ensuring that the local host can access the
     # share that's being migrated. If not provided, it will be detected

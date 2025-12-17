@@ -160,7 +160,7 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
             status="ACTIVE",
             failures=["ERROR"],
             interval=2,
-            wait=CONF.load_balancer_migration_timeout,
+            wait=CONF.resource_creation_timeout,
         )
 
         listener_id_map = {}
@@ -177,7 +177,7 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
                 status="ACTIVE",
                 failures=["ERROR"],
                 interval=2,
-                wait=CONF.load_balancer_migration_timeout,
+                wait=CONF.resource_creation_timeout,
             )
 
             if source_listener.default_pool_id:
@@ -193,7 +193,7 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
                         status="ACTIVE",
                         failures=["ERROR"],
                         interval=2,
-                        wait=CONF.load_balancer_migration_timeout,
+                        wait=CONF.resource_creation_timeout,
                     )
 
                     if source_pool.id in source_health_monitors_map:
@@ -205,7 +205,7 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
                             status="ACTIVE",
                             failures=["ERROR"],
                             interval=2,
-                            wait=CONF.load_balancer_migration_timeout,
+                            wait=CONF.resource_creation_timeout,
                         )
 
                     source_members = source_members_map.get(source_pool.id, [])
@@ -222,7 +222,7 @@ class LoadBalancerHandler(base.BaseMigrationHandler):
                             status="ACTIVE",
                             failures=["ERROR"],
                             interval=2,
-                            wait=CONF.load_balancer_migration_timeout,
+                            wait=CONF.resource_creation_timeout,
                         )
 
         # Attach Floating IPs to the destination load balancer port
