@@ -1,2 +1,2 @@
-Keypair migration handler
-=========================
+Migrating keypairs
+==================
