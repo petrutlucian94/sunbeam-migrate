@@ -9,3 +9,5 @@ Operations
    cleanup
    list
    external-migrations
+   delete-records
+   restore-records
