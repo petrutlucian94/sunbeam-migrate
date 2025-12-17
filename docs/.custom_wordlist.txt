@@ -191,6 +191,7 @@ middleware
 mons
 metallb
 microsoft
+migratable
 misconfiguration
 mycloud
 myinstance

@@ -1,3 +1,5 @@
+.. _migration_handlers_ref:
+
 Migration handlers
 ==================
 

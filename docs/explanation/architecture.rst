@@ -66,6 +66,8 @@ a simple yet powerful feature that allows manually creating resources that
 have different specifications than the original ones. The tool will then
 use these external resources when referenced by other migrated resources.
 
+.. _resource_hierarchies_ref:
+
 Resource hierarchies
 --------------------
 
