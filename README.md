@@ -5,6 +5,7 @@ A tool that facilitates the migration from Charmed Openstack to Sunbeam.
 
 * Main page: https://sunbeam-migrate.readthedocs.io
 * Tutorial: https://sunbeam-migrate.readthedocs.io/en/latest/tutorial/get-started-with-sunbeam-migrate/
+* Migration handlers: https://sunbeam-migrate.readthedocs.io/en/latest/how-to/migration-handlers/
 
 ## Potential future improvements
 
