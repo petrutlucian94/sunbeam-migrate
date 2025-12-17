@@ -11,7 +11,7 @@ Multi-tenant limitations
 ``sunbeam-migrate`` currently identifies migrated resources based on UUIDs.
 
 Nova keypairs do not have an UUID, while Barbican secrets cannot be accessed
-by other projects, unlessed allowed through ACL rules.
+by other projects, unless allowed through ACL rules.
 
 For this reason, keypairs and secrets do not support multi-tenant mode for the
 moment. This would require extending ``sunbeam-migrate`` to receive the owner
@@ -40,7 +40,7 @@ in order to ensure the consistency of the snapshot. See the `Nova quiesce spec`_
 for more details.
 
 If the guest VM does not support this mechanism, consider stopping the instance
-before initating a migration.
+before initiating a migration.
 
 At the same time, ``sunbeam-migrate`` will pass the ``Force`` flag when uploading
 volumes to Glance. This is required in order to allow attached volumes to be
