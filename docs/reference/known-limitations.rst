@@ -18,13 +18,13 @@ moment. This would require extending ``sunbeam-migrate`` to receive the owner
 project id along with the resource ID and use project scoped sessions, basically
 impersonating the owner of those resources.
 
-UUIDs
------
+Preserving UUIDs
+----------------
 
 The original resource UUIDs will not be preserved on the destination cloud.
 
-Keystone and Glance are among the very few services that allow specifying an
-explicit UUID when creating resources.
+Keystone and Glance are among the very few Openstack services that allow
+specifying an explicit UUID when creating resources.
 
 However, users can call ``sunbeam-migrate list`` to obtain the source and
 destination IDs for every migrated resource.

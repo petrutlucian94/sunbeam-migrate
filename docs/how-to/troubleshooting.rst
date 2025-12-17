@@ -30,5 +30,6 @@ Not all Openstack services allow specifying a different owner when creating
 resources. As such, ``sunbeam-migrate`` needs to use project scoped sessions,
 assigning itself as a member of the migrated tenant.
 
-We're using the "member" role name but if the deployment uses non-standard role
-names, please specify it in the ``sunbeam-migrate`` configuration.
+We're using the "member" role name but if the Openstack deployment uses
+non-standard role names, please specify it in the ``sunbeam-migrate``
+configuration.
