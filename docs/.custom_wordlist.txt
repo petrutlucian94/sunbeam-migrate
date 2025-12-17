@@ -120,6 +120,7 @@ VMDK
 VMware
 VXLAN
 VLAN
+VNI
 amd
 apache
 api

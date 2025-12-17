@@ -124,7 +124,7 @@ This section describes each of the available options.
 
 | **Type:** ``boolean``
 | **Default:** ``true``
-| **Description:** The multitenant mode allows identifying and migrating resources owned by another tenant. This requires admin privileges. Identity resources such as domains, projects, users and roles will be treated as dependencies and migrated automatically if ``--include-dependencies`` is set.
+| **Description:** The multi-tenant mode allows identifying and migrating resources owned by another tenant. This requires admin privileges. Identity resources such as domains, projects, users and roles will be treated as dependencies and migrated automatically if ``--include-dependencies`` is set.
 
 ``image_transfer_chunk_size``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,7 +201,7 @@ This section describes each of the available options.
 
 | **Type:** ``string``
 | **Default:** ``null``
-| **Description:** The local IP addres used to access Manila shares.
+| **Description:** The local IP address used to access Manila shares.
 
 If unspecified, it will be automatically determined based on the host routes. When migrating shares, ``sunbeam-migrate`` transparently handles shares access rules in order to be able to mount the shares and transfer data.
 
