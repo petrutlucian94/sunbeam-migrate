@@ -112,6 +112,8 @@ IOV
 TLS
 Terraform
 Traefik
+UUID
+UUIDs
 Uncordon
 VF
 VFs
@@ -286,6 +288,7 @@ jujucharms
 maas
 orchestrator
 Orchestrator
+quiesce
 snapcraft
 snapcraftcontent
 deallocation

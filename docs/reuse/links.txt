@@ -17,3 +17,4 @@
 
 .. _clouds yaml: https://docs.openstack.org/python-openstackclient/latest/configuration/index.html#clouds-yaml
 .. _OpenStack SDK: https://docs.openstack.org/openstacksdk/latest/
+.. _Nova quiesce spec: https://specs.openstack.org/openstack/nova-specs/specs/juno/approved/quiesced-image-snapshots-with-qemu-guest-agent.html
