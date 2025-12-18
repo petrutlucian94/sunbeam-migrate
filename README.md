@@ -24,6 +24,7 @@ A tool that facilitates the migration from Charmed Openstack to Sunbeam.
     * can be skipped completely or just the actual address
   * router IP
 * Attach floating ips to instance ports
+* Migrate share access rules (configurable)
 * Cross-tenant keypair and secret migrations
   * The keypairs do not have an unique ID. Cross-tenant requests must include
     the keypair name and the project/user ID, even get/list.

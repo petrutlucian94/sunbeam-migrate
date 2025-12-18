@@ -30,8 +30,8 @@ Here are a few other approaches that have been considered.
   * Both clouds use the same external storage backend
   * It's a matter of importing the volume on the destination cloud.
 
-Mismatching volume types
-------------------------
+Volume types
+------------
 
 The source volume type specification may not apply to the destination cloud.
 
@@ -49,11 +49,11 @@ The following example migrates a volume and removes it from the source cloud:
 
 .. code-block:: none
 
-    sunbeam-migrate start \
-      --include-dependencies \
-      --resource-type=volume \
-      --cleanup-source \
-      cea7caec-d20c-4560-b524-0306cd55aca9
+  sunbeam-migrate start \
+    --include-dependencies \
+    --resource-type=volume \
+    --cleanup-source \
+    cea7caec-d20c-4560-b524-0306cd55aca9
 
   2025-12-18 13:30:02,738 INFO Initiating volume migration, resource id: cea7caec-d20c-4560-b524-0306cd55aca9
   2025-12-18 13:30:04,588 INFO Migrating associated project resource: c1007fbc056d4bc98dec25b1ed3078a9
