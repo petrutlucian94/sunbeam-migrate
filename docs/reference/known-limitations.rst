@@ -51,3 +51,38 @@ At the same time, ``sunbeam-migrate`` will pass the ``Force`` flag when uploadin
 volumes to Glance. This is required in order to allow attached volumes to be
 uploaded. Most Cinder volume drivers support this but if your backend does not
 allow it, consider temporarily detaching the migrated volumes.
+
+Glance uploads
+--------------
+
+``sunbeam-migrate`` relies on Glance uploads to transfer instance and volume
+data. Make sure that the Glance services have enough storage capacity to
+accommodate this.
+
+Manila share types
+------------------
+
+At the moment, ``sunbeam-migrate`` can only access NFS share exports. Other
+export types such as ``cephfs`` are unsupported.
+
+This limitation also applies to Sunbeam, which only allows CephFS shares
+exported through NFS.
+
+Load balancer limitations
+-------------------------
+
+HTTP load balancers cannot be used with Sunbeam at the time of writing since it
+relies on the OVN backend and cannot leverage Octavia "amphora" instances.
+
+This isn't a limitation of the migration tool per se, but something to be aware
+of when migrating to Sunbeam.
+
+Openstack releases
+------------------
+
+The Openstack APIs have stabilized over the past few years and special
+consideration was given to backwards compatibility, especially with the
+introduction of :ref:`microversions`.
+
+``sunbeam-migrate`` is expected to work with any Openstack release starting
+Openstack Zed.

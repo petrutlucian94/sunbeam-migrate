@@ -45,3 +45,11 @@ Let's verify the installation by getting the list of available commands:
     show               Show migration information.
     start              Migrate an individual resource.
     start-batch        Migrate multiple resources that match the filters.
+
+Please install the ``nfs-common`` package as well if you intend to migrate
+Manila NFS shares.
+
+.. code-block:: bash
+
+  sudo apt-get update
+  sudo apt-get install -y nfs-common
