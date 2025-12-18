@@ -10,3 +10,4 @@ Neutron migration handlers
    Security group <security-group>
    Security group rule <security-group-rule>
    Port <port>
+   Floating IP <floating-ip>
