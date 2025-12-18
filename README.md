@@ -32,6 +32,8 @@ A tool that facilitates the migration from Charmed Openstack to Sunbeam.
     * `perform_individual_migration`
     * `get_associated_resources`
     * The migration `start` command
+    * internal database queries and Openstack requests that currently rely
+      solely on the resource ID
   * We have a similar situation with Barbican secrets and secret containers,
     where we aren't normally allowed to retrieve secrets owned by other projects.
 
