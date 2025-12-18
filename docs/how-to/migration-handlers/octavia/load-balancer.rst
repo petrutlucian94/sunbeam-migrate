@@ -4,9 +4,9 @@ Migrating load balancers
 Octavia load balancers are migrated along with all their components:
 listeners, pools, members, and health monitors.
 
-Use ``--include-dependencies`` to automatically migrate the VIP network and
-subnet. The flag should also be used in multi-tenant mode to automatically
-migrate Keystone dependencies.
+Use ``--include-dependencies`` to automatically migrate the VIP network,
+subnet and floating IP. The flag should also be used in multi-tenant mode to
+automatically migrate Keystone dependencies.
 
 .. code-block:: none
 

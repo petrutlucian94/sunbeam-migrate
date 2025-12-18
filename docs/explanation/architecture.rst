@@ -96,3 +96,17 @@ For example, subnets are members of networks.
 
 Member resources may also be migrated separately, after the parent resource was
 migrated.
+
+Already existing resources
+--------------------------
+
+Some Openstack services allow duplicate or missing resource names, in which case
+``sunbeam-migrate`` will ignore existing resources that have the same name.
+
+If a resource has been recreated without the use of ``sunbeam-migrate``, use
+the ``register-external`` command to avoid migrating it twice.
+
+For services that guarantee the resource names to be unique (e.g. Keystone
+projects of a given domain), ``sunbeam-migrate`` will skip already existing
+resources that have the same name and record the corresponding ID in the
+internal database.

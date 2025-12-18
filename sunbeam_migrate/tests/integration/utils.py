@@ -45,12 +45,14 @@ def get_test_resource_name() -> str:
 
 def call_migrate(config_path: Path, command: list[str]):
     command = ["sunbeam-migrate", "--config", str(config_path)] + command
+    LOG.info("Calling sunbeam-migrate: %s", command)
     subprocess.check_call(command, text=True)
 
 
 def check_migrate(config_path: Path, command: list[str]) -> str:
     """Run the sunbeam-migrate command and capture the output."""
     command = ["sunbeam-migrate", "--config", str(config_path)] + command
+    LOG.info("Calling sunbeam-migrate: %s", command)
     return subprocess.check_output(command, text=True)
 
 

@@ -1,6 +1,19 @@
 Migrating secret containers
 ===========================
 
+Barbican resources cannot be retrieved by other projects unless explicitly
+allowed through ACLs.
+
+``sunbeam-migrate`` currently expects to identify resources solely based on
+their IDs, for which reason cross-project secret migration is not supported.
+
+To migrate these resources, consider using a separate ``sunbeam-migrate`` config
+and database for each individual tenant. The admin user user can be temporarily
+added as a member of the migrated projects.
+
+Example
+-------
+
 This example creates and migrates a secret container along with the referenced
 secrets.
 
@@ -26,14 +39,14 @@ secrets.
     --secret "certificate=$cert_ref" \
     --secret "private_key=$key_ref"
 
-We'll use a batch migration, covering all secret containers owned by a given
-project.
+We'll use a batch migration, covering all secret containers owned by the
+current project.
 
 .. code-block:: none
 
   sunbeam-migrate start-batch \
     --resource-type=secret-container \
-    --filter "project-id:516ddfe184c84f77889b33f027716e89" \
+    --all \
     --include-dependencies
 
   2025-11-17 15:41:47,195 INFO Initiating secret-container migration, resource id: http://10.8.99.203/openstack-barbican/v1/containers/85e2dee5-0b8c-4d7e-a1b7-a634788d49d7
@@ -47,8 +60,7 @@ project.
 
 ``--include-dependencies`` was needed since the secrets are dependent resources
 that must exist before the secret container gets created, which only holds
-secret references. Furthermore, this flag should be passed in multi-tenant
-mode to automatically migrate Keystone resources.
+secret references.
 
 Resulting resources:
 

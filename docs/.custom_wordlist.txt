@@ -99,6 +99,7 @@ RabbitMQ
 RefStack
 ReplicaSet
 RBAC
+RBD
 RPC
 SAML
 SDK
@@ -123,6 +124,7 @@ VMware
 VXLAN
 VLAN
 VNI
+VNIC
 amd
 apache
 api
@@ -131,6 +133,7 @@ auth
 balancers
 balancer's
 backend
+backends
 br
 ceph
 cirros
@@ -171,6 +174,7 @@ init
 initiator
 intra
 isolCPUs
+iSCSI
 juju
 keypair
 keypairs
@@ -191,6 +195,8 @@ middleware
 mons
 metallb
 microsoft
+microversion
+microversions
 migratable
 misconfiguration
 mycloud
@@ -289,6 +295,7 @@ jujucharms
 maas
 orchestrator
 Orchestrator
+vNIC
 quiesce
 snapcraft
 snapcraftcontent

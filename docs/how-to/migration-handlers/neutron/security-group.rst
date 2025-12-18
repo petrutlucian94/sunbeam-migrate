@@ -4,7 +4,13 @@ Migrating security groups
 This example migrates a security group along with all its belonging security
 group rules.
 
-.. note:: Security group rules may reference other security groups (via ``remote_group_id``). Ensure all security groups are migrated before migrating rules. One simple workaround would be to perform the **security group batched migration** in two steps: one without ``--include-members`` and then another run with ``--include-members``.
+.. note::
+
+  Security group rules may reference other security groups (via ``remote_group_id``).
+  Consider migrating all security groups before recreating security group rules.
+  One simple solution would be to perform a **security group batched migration**
+  in two steps: one without ``--include-members`` and then another run with
+  ``--include-members``.
 
 .. note::
 
