@@ -22,12 +22,14 @@ The syntax for individual resource migrations is the following:
 
   Options:
     --resource-type TEXT    The migrated resource type (e.g. image, secret)
+    --dry-run               Only log the steps to be executed, skipping
+                            migrations.
     --cleanup-source        Cleanup the resources on the source side if the
                             migration succeeds.
     --include-dependencies  Automatically migrate associated resources.
     --include-members       Automatically migrate member resources (contained
                             resources).
-    -h, --help              Show this message and exit
+    -h, --help              Show this message and exit.
 
 At minimum, we need to specify the type of the resource to migrate and its ID
 (a UUID in most cases).

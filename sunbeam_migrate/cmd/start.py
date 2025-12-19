@@ -14,6 +14,11 @@ LOG = logging.getLogger()
 @click.option("--resource-type", help="The migrated resource type (e.g. image, secret)")
 @click.argument("resource_id")
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Only log the steps to be executed, skipping migrations.",
+)
+@click.option(
     "--cleanup-source",
     is_flag=True,
     help="Cleanup the resources on the source side if the migration succeeds.",
@@ -31,6 +36,7 @@ LOG = logging.getLogger()
 def start_migration(
     resource_type: str,
     resource_id: str,
+    dry_run: bool,
     cleanup_source: bool,
     include_dependencies: bool,
     include_members: bool,
@@ -40,6 +46,7 @@ def start_migration(
     mgr.perform_individual_migration(
         resource_type,
         resource_id,
+        dry_run=dry_run,
         cleanup_source=cleanup_source,
         include_dependencies=include_dependencies,
         include_members=include_members,

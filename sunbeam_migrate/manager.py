@@ -25,15 +25,47 @@ class SunbeamMigrationManager:
         self,
         resource_type: str,
         resource_id: str,
+        dry_run: bool = False,
         cleanup_source: bool = False,
         include_dependencies: bool = False,
         include_members: bool = False,
-    ) -> models.Migration:
+    ) -> models.Migration | None:
         """Migrate the specified resource."""
         handler = self._get_migration_handler(resource_type)
 
         if not resource_id:
             raise exception.InvalidInput("No resource id specified.")
+
+        if dry_run:
+            LOG.info(
+                "DRY-RUN: %s migration, resource id: %s, cleanup source: %s",
+                resource_type,
+                resource_id,
+                cleanup_source,
+            )
+            if include_dependencies:
+                associated_resources = self._get_associated_resources(
+                    resource_type, resource_id
+                )
+                if associated_resources["pending"]:
+                    for resource in associated_resources["pending"]:
+                        LOG.info(
+                            "DRY-RUN: Would migrate associated resource with type: "
+                            "%s, id: %s",
+                            resource.resource_type,
+                            resource.source_id,
+                        )
+            if include_members:
+                member_resources = handler.get_member_resources(resource_id)
+                if member_resources:
+                    for resource in member_resources:
+                        LOG.info(
+                            "DRY-RUN: Would migrate member resource with type: "
+                            "%s, id: %s",
+                            resource.resource_type,
+                            resource.source_id,
+                        )
+            return None
 
         migration, associated_migrations = self._migrate_parent_resource(
             handler=handler,
@@ -69,7 +101,6 @@ class SunbeamMigrationManager:
         if cleanup_source:
             migration.status = constants.STATUS_PENDING_CLEANUP
             migration.save()
-
             self.cleanup_migration_source(migration)
 
             for associated_migration in associated_migrations:
@@ -160,10 +191,19 @@ class SunbeamMigrationManager:
                     associated_migration = self.perform_individual_migration(
                         associated_resource.resource_type,
                         associated_resource.source_id,
+                        dry_run=False,
                         include_dependencies=include_dependencies,
                         include_members=include_members,
                     )
                     # Indirect dependencies will not be included.
+                    if associated_migration is None:
+                        raise exception.SunbeamMigrateException(
+                            "Failed to migrate associated resource %s %s"
+                            % (
+                                associated_resource.resource_type,
+                                associated_resource.source_id,
+                            )
+                        )
                     if associated_resource.should_cleanup:
                         LOG.debug(
                             "Adding associated resource to the cleanup list: %s",
@@ -261,13 +301,15 @@ class SunbeamMigrationManager:
                 migrated_member = self.perform_individual_migration(
                     member_resource.resource_type,
                     member_resource.source_id,
+                    dry_run=False,
                     cleanup_source=cleanup_source,
                     include_dependencies=include_dependencies,
                     include_members=include_members,
                 )
-                migrated_member_resources.append(
-                    self._get_migrated_resource(migrated_member)
-                )
+                if migrated_member:
+                    migrated_member_resources.append(
+                        self._get_migrated_resource(migrated_member)
+                    )
             except Exception as ex:
                 LOG.error(
                     "Failed to migrate member resource %s %s: %r",
@@ -332,21 +374,14 @@ class SunbeamMigrationManager:
                 )
                 continue
 
-            if dry_run:
-                LOG.info(
-                    "DRY-RUN: %s migration, resource id: %s, cleanup source: %s",
-                    resource_type,
-                    resource_id,
-                    cleanup_source,
-                )
-            else:
-                self.perform_individual_migration(
-                    resource_type,
-                    resource_id,
-                    cleanup_source=cleanup_source,
-                    include_dependencies=include_dependencies,
-                    include_members=include_members,
-                )
+            self.perform_individual_migration(
+                resource_type,
+                resource_id,
+                dry_run=dry_run,
+                cleanup_source=cleanup_source,
+                include_dependencies=include_dependencies,
+                include_members=include_members,
+            )
 
     def cleanup_migration_source(self, migration: models.Migration):
         """Cleanup the migration source."""
