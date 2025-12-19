@@ -14,31 +14,43 @@ Cinder release. Furthermore, it doesn't require additional configuration or pack
 Alternative approaches
 ----------------------
 
-Here are a few other approaches that have been considered.
+Here are a few other approaches that have been considered and may be implemented
+as alternative volume migration mechanisms in future releases. Users may pick
+one of these through config options.
 
-* Using the Cinder migration API.
+Using the Cinder migration API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  * The backends must be part of the same Openstack cloud.
+Cinder has a volume migration API, however the source and destination backends
+must be part of the same Openstack cloud.
 
-* The "os-brick" library.
+The "os-brick" library
+~~~~~~~~~~~~~~~~~~~~~~
 
-  * The "os-brick" library can be used to connect the source and destination
-    volumes locally, allowing the payload to be copied over (e.g. using ``dd``).
-  * Both storage backends must be accessible
-  * May require additional packages and configuration (e.g. iSCSI initiator,
-    Ceph client, etc).
+The "os-brick" library can be used to connect the source and destination
+volumes locally, allowing the payload to be copied over (for example
+using ``dd``).
 
-* Through backend specific mechanisms.
+This implies that both storage backends must be accessible. Also, it may
+require additional packages and configuration (e.g. iSCSI initiator,
+Ceph client etc).
 
-  * Ceph RBD allows live migrating images between clusters.
-  * Both storage backends must be accessible.
-  * Requires additional packages and configuration.
-  * Must use the same backend type and version.
+Backend specific mechanisms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* In-place migration
+Ceph RBD images can be live migrated between Ceph clusters. Again, this implies
+that both storage backends must be directly accessible and it will require
+additional configuration and packages.
 
-  * Both clouds use the same external storage backend.
-  * It's a matter of importing the volume on the destination cloud.
+Shared storage backend
+~~~~~~~~~~~~~~~~~~~~~~
+
+In this scenario, both clouds are connected to the the same storage backend and
+it's a matter of importing the volume on the destination side.
+
+Sunbeam can be extended to join an existing Ceph cluster instead of creating a
+new cluster during bootstrap. The Ceph data would be copied over through OSD
+rebalancing, allowing the old nodes to be decommissioned.
 
 Volume types
 ------------

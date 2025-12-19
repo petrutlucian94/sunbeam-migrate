@@ -7,8 +7,9 @@ Domain migrations will cascade to all the belonging projects, users and roles if
 Domains can also be migrated as :ref:`dependencies<resource_hierarchies_ref>`
 of Keystone projects and users.
 
-In multi-tenant mode, identity resources will be migrated as dependencies of
-other Openstack resources (e.g. instances, volumes, networks, etc).
+In :doc:`multi-tenant mode<../../../explanation/multitenant-mode>`,
+identity resources will be migrated as dependencies of other Openstack resources
+(e.g. instances, volumes, networks, etc).
 
 Example
 -------
