@@ -5,6 +5,8 @@ import logging
 import subprocess
 from typing import Any
 
+from openstack import exceptions as openstack_exc
+
 from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
 from sunbeam_migrate.utils import client_utils, manila_utils
@@ -113,6 +115,13 @@ class ShareHandler(base.BaseMigrationHandler):
             wait=CONF.resource_creation_timeout,
         )
 
+        if CONF.preserve_share_access_rules:
+            self._migrate_share_access_rules(
+                source_share, destination_share, owner_destination_session
+            )
+        else:
+            LOG.info("'preserve_share_access_rules' disabled.")
+
         self._migrate_share_data(source_share, destination_share)
 
         return destination_share.id
@@ -146,6 +155,69 @@ class ShareHandler(base.BaseMigrationHandler):
             kwargs["share_type"] = destination_share_type_id
 
         return kwargs
+
+    def _migrate_share_access_rules(
+        self, source_share, destination_share, destination_session
+    ):
+        """Migrate share access rules from source to destination share.
+
+        :param source_share: The source share object
+        :param destination_share: The destination share object
+        :param destination_session: The session to use for destination operations
+        """
+        try:
+            source_access_rules = self._source_session.shared_file_system.access_rules(
+                source_share
+            )
+        except openstack_exc.NotFoundException:
+            LOG.debug("No access rules found on source share: %s", source_share.id)
+            return
+
+        for rule in source_access_rules:
+            # Skip rules that are not in active state
+            if hasattr(rule, "state") and rule.state != "active":
+                LOG.debug("Skipping access rule %s with state %s", rule.id, rule.state)
+                continue
+
+            try:
+                LOG.info(
+                    "Creating access rule on destination share %s: "
+                    "type=%s, to=%s, level=%s",
+                    destination_share.id,
+                    rule.access_type,
+                    rule.access_to,
+                    rule.access_level,
+                )
+                access_rule = destination_session.shared_file_system.create_access_rule(
+                    destination_share.id,
+                    access_to=rule.access_to,
+                    access_type=rule.access_type,
+                    access_level=rule.access_level,
+                )
+                LOG.info("Waiting for access rule to become active: %s", access_rule.id)
+                destination_session.shared_file_system.wait_for_status(
+                    access_rule,
+                    status="active",
+                    attribute="state",
+                    failures=["error"],
+                    interval=5,
+                    wait=CONF.resource_creation_timeout,
+                )
+            except openstack_exc.ConflictException as exc:
+                LOG.warning(
+                    "Access rule already exists or conflicts "
+                    "on destination share %s: %r",
+                    destination_share.id,
+                    exc,
+                )
+            except Exception as exc:
+                LOG.error(
+                    "Failed to create access rule on destination share %s: %r",
+                    destination_share.id,
+                    exc,
+                )
+                # Continue with other rules even if one fails
+                continue
 
     def _migrate_share_data(self, source_share, destination_share):
         with (

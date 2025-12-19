@@ -2,7 +2,10 @@ Migrating Manila shares
 =======================
 
 ``sunbeam-migrate`` can be used to migrate Manila shares along with
-the share types the user data.
+the share types, access rules and user data.
+
+Migrating access rules can be disabled using the ``preserve_share_access_rules``
+setting.
 
 Share types
 -----------

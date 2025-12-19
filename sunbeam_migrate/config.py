@@ -62,7 +62,9 @@ class SunbeamMigrateConfig(BaseModel):
     preserve_instance_availability_zone: bool = False
     preserve_load_balancer_availability_zone: bool = False
     # Preserve the Manila share type.
-    preserve_share_type: bool = False
+    preserve_share_type: bool = True
+    # Whether to recreate share access rules when migrating shares.
+    preserve_share_access_rules: bool = True
     # Preserve the network segmentation ID (e.g. VLAN tag or tunnel VNI).
     # This is disabled by default since it may conflict with other existing
     # networks from the destination cloud.
