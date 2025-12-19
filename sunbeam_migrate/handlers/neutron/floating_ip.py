@@ -6,6 +6,7 @@ import logging
 
 from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
+from sunbeam_migrate.utils import neutron_utils
 
 CONF = config.get_config()
 LOG = logging.getLogger()
@@ -145,8 +146,10 @@ class FloatingIPHandler(base.BaseMigrationHandler):
             "description",
             "dns_domain",
             "dns_name",
-            "floating_ip_address",
         ]
+        if CONF.preserve_port_floating_ip_address:
+            fields.append("floating_ip_address")
+
         kwargs = {}
         for field in fields:
             value = getattr(source_fip, field, None)
@@ -171,16 +174,26 @@ class FloatingIPHandler(base.BaseMigrationHandler):
                     source_subnet_id,
                     migrated_associated_resources,
                 )
-                self._destination_session.network.add_interface_to_router(
-                    dest_router_id,
-                    subnet_id=port_subnet_id,
+                router_interface_subnets = neutron_utils.get_router_interface_subnets(
+                    self._destination_session, dest_router_id
                 )
-                LOG.info(
-                    "Added interface from subnet %s to router %s on destination "
-                    "to allow floating IP association",
-                    port_subnet_id,
-                    dest_router_id,
-                )
+                if port_subnet_id in router_interface_subnets:
+                    LOG.info(
+                        "Subnet %s already connected to router %s.",
+                        port_subnet_id,
+                        dest_router_id,
+                    )
+                else:
+                    self._destination_session.network.add_interface_to_router(
+                        dest_router_id,
+                        subnet_id=port_subnet_id,
+                    )
+                    LOG.info(
+                        "Added interface from subnet %s to router %s on destination "
+                        "to allow floating IP association",
+                        port_subnet_id,
+                        dest_router_id,
+                    )
             except exception.NotFound:
                 LOG.warning(
                     "Router %s not found in migrated associated resources, "

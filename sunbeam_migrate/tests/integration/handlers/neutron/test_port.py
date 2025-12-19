@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: 2025 - Canonical Ltd
 # SPDX-License-Identifier: Apache-2.0
 
+import json
+
+import yaml
+
 from sunbeam_migrate.tests.integration import utils as test_utils
 from sunbeam_migrate.tests.integration.handlers.neutron import utils as neutron_utils
 
@@ -72,13 +76,26 @@ def _delete_port(session, port_id: str):
 
 def test_migrate_port_with_dependencies(
     request,
+    test_config,
     test_config_path,
     test_credentials,
     test_source_session,
     test_destination_session,
 ):
-    """Test port migration with all associated resources and fixed IP."""
-    # Create network, subnet, and security group on source
+    """Test port migration with all associated resources.
+
+    We'll define a tenant network, subnet, and security group on the source cloud.
+
+    At the same time, we'll create and attach a floating IP, for which we'll
+    need an external network and subnet as well as a router connecting the two
+    networks.
+    """
+    # We intend to cover floating IPs, so let's set the following flags.
+    test_config.preserve_port_floating_ip = True
+    with test_config_path.open("w") as f:
+        cfg_dict = json.loads(test_config.model_dump_json())
+        f.write(yaml.dump(cfg_dict))
+
     network = neutron_utils.create_test_network(test_source_session)
     request.addfinalizer(lambda: test_source_session.network.delete_network(network.id))
 
@@ -92,7 +109,35 @@ def test_migrate_port_with_dependencies(
         lambda: test_source_session.network.delete_security_group(security_group.id)
     )
 
-    # Create port with subnet, security group, and fixed IP
+    external_network = neutron_utils.create_test_network(
+        test_source_session, is_router_external=True
+    )
+    request.addfinalizer(
+        lambda: test_source_session.network.delete_network(
+            external_network.id, ignore_missing=True
+        )
+    )
+
+    external_subnet = neutron_utils.create_test_subnet(
+        test_source_session, external_network, cidr="172.30.10.0/24"
+    )
+    request.addfinalizer(
+        lambda: test_source_session.network.delete_subnet(
+            external_subnet.id, ignore_missing=True
+        )
+    )
+
+    router = neutron_utils.create_test_router(
+        test_source_session,
+        external_network,
+        external_subnet,
+        attach_subnet_id=subnet.id,
+    )
+    request.addfinalizer(
+        lambda: neutron_utils.cleanup_router(test_source_session, router.id, subnet.id)
+    )
+
+    # Create port with subnet, security group fixed IP
     port = _create_test_port(
         test_source_session,
         network,
@@ -101,6 +146,16 @@ def test_migrate_port_with_dependencies(
         fixed_ip="10.0.0.10",
     )
     request.addfinalizer(lambda: _delete_port(test_source_session, port.id))
+
+    # Create and attach a floating ip.
+    floating_ip = neutron_utils.create_test_floating_ip(
+        test_source_session, external_network.id, port.id, external_subnet.id
+    )
+    request.addfinalizer(
+        lambda: test_source_session.network.delete_ip(
+            floating_ip.id, ignore_missing=True
+        )
+    )
 
     # Migrate port with dependencies
     test_utils.call_migrate(
@@ -132,12 +187,46 @@ def test_migrate_port_with_dependencies(
         lambda: test_destination_session.network.delete_security_group(dest_sg.id)
     )
 
+    dest_external_network_id = test_utils.get_destination_resource_id(
+        test_config_path, "network", external_network.id
+    )
+    request.addfinalizer(
+        lambda: test_destination_session.network.delete_network(
+            dest_external_network_id, ignore_missing=True
+        )
+    )
+    dest_external_subnet_id = test_utils.get_destination_resource_id(
+        test_config_path, "subnet", external_subnet.id
+    )
+    request.addfinalizer(
+        lambda: test_destination_session.network.delete_subnet(
+            dest_external_subnet_id, ignore_missing=True
+        )
+    )
+    dest_router_id = test_utils.get_destination_resource_id(
+        test_config_path, "router", router.id
+    )
+    request.addfinalizer(
+        lambda: neutron_utils.cleanup_router(
+            test_destination_session, dest_router_id, dest_subnet.id
+        )
+    )
+
     dest_port = test_destination_session.network.find_port(
         port.name, ignore_missing=False
     )
     request.addfinalizer(lambda: _delete_port(test_destination_session, dest_port.id))
 
     _check_migrated_port(port, dest_port)
+
+    dest_floating_ip = test_utils.get_destination_resource_id(
+        test_config_path, "floating-ip", floating_ip.id
+    )
+    request.addfinalizer(
+        lambda: test_destination_session.network.delete_ip(
+            dest_floating_ip, ignore_missing=True
+        )
+    )
 
     # Verify fixed IP was preserved and subnet_id was mapped
     assert dest_port.fixed_ips, "migrated port has no fixed IPs"

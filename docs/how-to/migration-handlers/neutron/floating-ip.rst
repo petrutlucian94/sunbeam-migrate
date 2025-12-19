@@ -10,6 +10,10 @@ explicitly.
 The migration will cascade to the corresponding networks, subnets and routers
 referenced by the floating IP.
 
+Use the ``preserve_port_floating_ip_address`` address to specify if the exact
+same floating IP address should be used. Consider disabling this when using
+a different public subnet.
+
 Example:
 
 .. code-block:: none

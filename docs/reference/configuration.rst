@@ -196,6 +196,34 @@ This section describes each of the available options.
 | **Default:** ``false``
 | **Description:** Preserve Neutron port MAC addresses.
 
+``preserve_port_floating_ip``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+| **Type:** ``boolean``
+| **Default:** ``false``
+| **Description:** Preserve Neutron port floating IP.
+
+``preserve_port_floating_ip_address``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+| **Type:** ``boolean``
+| **Default:** ``true``
+| **Description:** Use the same IP address when migrating floating IPs. Consider disabling this when using a different public subnet on the destination cloud.
+
+``preserve_port_fixed_ips``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+| **Type:** ``boolean``
+| **Default:** ``true``
+| **Description:** Use to preserve the fixed IPs when migrating Neutron ports.
+
+``preserve_router_ip``
+~~~~~~~~~~~~~~~~~~~~~~
+
+| **Type:** ``boolean``
+| **Default:** ``true``
+| **Description:** Use the same router IP.
+
 ``manila_local_access_ip``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -14,6 +14,8 @@ such as:
 
       * security group rules
 
+    * floating IPs
+
 * storage resources
 
   * instance root disk
@@ -38,14 +40,15 @@ the instance is destroyed.
 The user can configure whether ``sunbeam-migrate`` should preserve the following:
 
 * instance availability zone
-* port MAC addresses
+* port fixed IP and MAC addresses
+* floating IP, optionally using the exact same address
 * network segmentation IDs
 * volume type
 
 .. note::
 
-  If the desired networks and subnets have been manually recreated on the
-  destination side, make sure to import them in ``sunbeam-migrate`` using
+  If the desired networks and subnets and routers have been manually recreated
+  on the destination side, make sure to import them in ``sunbeam-migrate`` using
   the ``register-external`` command.
 
 Example

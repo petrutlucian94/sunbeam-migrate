@@ -1,7 +1,13 @@
 # SPDX-FileCopyrightText: 2025 - Canonical Ltd
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
+
+from openstack import exceptions as openstack_exc
+
 from sunbeam_migrate.tests.integration import utils as test_utils
+
+LOG = logging.getLogger()
 
 
 def create_test_network(session, is_router_external=False, **overrides):
@@ -79,3 +85,43 @@ def create_test_router(
     if attach_subnet_id:
         session.network.add_interface_to_router(router, subnet_id=attach_subnet_id)
     return session.network.get_router(router.id)
+
+
+def create_test_floating_ip(
+    session, external_network_id: str, port_id: str, subnet_id: str | None
+):
+    kwargs = {
+        "floating_network_id": external_network_id,
+        "port_id": port_id,
+        "description": "sunbeam-migrate test floating ip",
+    }
+    if subnet_id:
+        kwargs["subnet_id"] = subnet_id
+    floating_ip = session.network.create_ip(**kwargs)
+    return session.network.get_ip(floating_ip.id)
+
+
+def cleanup_router(session, router_id: str, subnet_id: str):
+    try:
+        session.network.remove_interface_from_router(router_id, subnet_id=subnet_id)
+    except openstack_exc.NotFoundException:
+        pass
+    except Exception as exc:
+        LOG.warning(
+            "Failed removing interface from router %s for subnet %s: %s",
+            router_id,
+            subnet_id,
+            exc,
+        )
+
+    try:
+        session.network.update_router(router_id, external_gateway_info=None)
+    except openstack_exc.NotFoundException:
+        pass
+    except Exception as exc:
+        LOG.warning("Failed clearing gateway for router %s: %s", router_id, exc)
+
+    try:
+        session.network.delete_router(router_id, ignore_missing=True)
+    except Exception as exc:
+        LOG.warning("Failed deleting router %s: %s", router_id, exc)

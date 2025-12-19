@@ -31,6 +31,8 @@ class PortHandler(base.BaseMigrationHandler):
         which must be migrated first.
         """
         types = ["network", "subnet", "security-group"]
+        if CONF.preserve_port_floating_ip:
+            types.append("floating-ip")
         if CONF.multitenant_mode:
             types.append("project")
         return types
@@ -65,6 +67,17 @@ class PortHandler(base.BaseMigrationHandler):
             associated_resources.append(
                 base.Resource(resource_type="security-group", source_id=sg_id)
             )
+
+        if CONF.preserve_port_floating_ip:
+            fips = self._source_session.network.ips(port_id=resource_id) or []
+            for fip in fips:
+                associated_resources.append(
+                    base.Resource(
+                        resource_type="floating-ip",
+                        source_id=fip.id,
+                        should_cleanup=True,
+                    )
+                )
 
         return associated_resources
 
@@ -151,7 +164,10 @@ class PortHandler(base.BaseMigrationHandler):
         if destination_security_group_ids:
             kwargs["security_group_ids"] = destination_security_group_ids
         if destination_fixed_ips:
-            kwargs["fixed_ips"] = destination_fixed_ips
+            if CONF.preserve_port_fixed_ips:
+                kwargs["fixed_ips"] = destination_fixed_ips
+            else:
+                LOG.info("'preserve_port_fixed_ips' disabled.")
 
         identity_kwargs = self._get_identity_build_kwargs(
             migrated_associated_resources,
@@ -159,7 +175,27 @@ class PortHandler(base.BaseMigrationHandler):
         )
         kwargs.update(identity_kwargs)
 
+        if CONF.preserve_port_floating_ip:
+            fips = self._source_session.network.ips(port_id=resource_id) or []
+        else:
+            LOG.info("'preserve_port_floating_ip' disabled.")
+            fips = []
+
         destination_port = self._destination_session.network.create_port(**kwargs)
+
+        for fip in fips:
+            dest_fip_id = self._get_associated_resource_destination_id(
+                "floating-ip", fip.id, migrated_associated_resources
+            )
+            LOG.info(
+                "Reattaching floating ip %s to port %s",
+                dest_fip_id,
+                destination_port.id,
+            )
+            self._destination_session.network.update_ip(
+                dest_fip_id, port_id=destination_port.id
+            )
+
         return destination_port.id
 
     def get_source_resource_ids(self, resource_filters: dict[str, str]) -> list[str]:

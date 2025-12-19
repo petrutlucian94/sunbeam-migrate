@@ -7,6 +7,7 @@ from openstack import exceptions as openstack_exc
 
 from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
+from sunbeam_migrate.utils import neutron_utils
 
 CONF = config.get_config()
 LOG = logging.getLogger(__name__)
@@ -81,24 +82,9 @@ class RouterHandler(base.BaseMigrationHandler):
         if not source_router:
             raise exception.NotFound(f"Router not found: {resource_id}")
 
-        member_subnet_ids = set()
-
-        internal_owner_prefixes = (
-            "network:router_interface",
-            "network:router_interface_distributed",
-            "network:ha_router_replicated_interface",
+        member_subnet_ids = neutron_utils.get_router_interface_subnets(
+            self._source_session, resource_id
         )
-
-        # Fetch all ports whose device_id == router.id
-        for port in self._source_session.network.ports(device_id=source_router.id):
-            owner = getattr(port, "device_owner", "") or ""
-            if not any(owner.startswith(prefix) for prefix in internal_owner_prefixes):
-                continue
-
-            for ip in getattr(port, "fixed_ips", []) or []:
-                subnet_id = ip.get("subnet_id")
-                if subnet_id:
-                    member_subnet_ids.add(subnet_id)
 
         member_resources: list[base.Resource] = []
         for subnet_id in member_subnet_ids:
@@ -253,7 +239,10 @@ class RouterHandler(base.BaseMigrationHandler):
             entry = {"subnet_id": dest_subnet_id}
             ip_address = fixed_ip.get("ip_address")
             if ip_address:
-                entry["ip_address"] = ip_address
+                if CONF.preserve_router_ip:
+                    entry["ip_address"] = ip_address
+                else:
+                    LOG.info("'preserve_router_ip' disabled.")
             new_fixed_ips.append(entry)
 
         new_external_gateway_info["external_fixed_ips"] = new_fixed_ips

@@ -68,6 +68,13 @@ class SunbeamMigrateConfig(BaseModel):
     # networks from the destination cloud.
     preserve_network_segmentation_id: bool = False
     preserve_port_mac_address: bool = False
+    # Whether to recreate floating IPs attached to migrated ports.
+    preserve_port_floating_ip: bool = False
+    # Whether the use the same IP address when moving floating IPs.
+    preserve_port_floating_ip_address: bool = True
+    # Whether to preserve the port fixed IPs.
+    preserve_port_fixed_ips: bool = True
+    preserve_router_ip: bool = True
 
     # The local IP used to access Manila shares. A temporary share access
     # rule will be defined, ensuring that the local host can access the

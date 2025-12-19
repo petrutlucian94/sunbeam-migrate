@@ -10,6 +10,14 @@ However, ``sunbeam-migrate`` allows migrating individual ports explicitly.
 
   Batch port migrations are not supported.
 
+The user can configure whether ``sunbeam-migrate`` should preserve the following:
+
+* port fixed IP and MAC addresses
+* floating IP, optionally using the exact same address
+
+Example
+-------
+
 .. code-block:: none
 
   sunbeam-migrate start \

@@ -234,46 +234,6 @@ def _cleanup_ports(session, network_id: str):
             )
 
 
-def _cleanup_router(session, router_id: str, subnet_id: str):
-    try:
-        session.network.remove_interface_from_router(router_id, subnet_id=subnet_id)
-    except openstack_exc.NotFoundException:
-        pass
-    except Exception as exc:
-        LOG.warning(
-            "Failed removing interface from router %s for subnet %s: %s",
-            router_id,
-            subnet_id,
-            exc,
-        )
-
-    try:
-        session.network.update_router(router_id, external_gateway_info=None)
-    except openstack_exc.NotFoundException:
-        pass
-    except Exception as exc:
-        LOG.warning("Failed clearing gateway for router %s: %s", router_id, exc)
-
-    try:
-        session.network.delete_router(router_id, ignore_missing=True)
-    except Exception as exc:
-        LOG.warning("Failed deleting router %s: %s", router_id, exc)
-
-
-def _create_floating_ip_for_load_balancer(
-    session, external_network_id: str, port_id: str, subnet_id: str | None
-):
-    kwargs = {
-        "floating_network_id": external_network_id,
-        "port_id": port_id,
-        "description": "sunbeam-migrate load balancer floating ip test",
-    }
-    if subnet_id:
-        kwargs["subnet_id"] = subnet_id
-    floating_ip = session.network.create_ip(**kwargs)
-    return session.network.get_ip(floating_ip.id)
-
-
 def test_migrate_simple_load_balancer_and_cleanup(
     request,
     test_config_path,
@@ -411,7 +371,7 @@ def test_migrate_load_balancer_with_floating_ip_and_router(
         attach_subnet_id=subnet.id,
     )
     request.addfinalizer(
-        lambda: _cleanup_router(test_source_session, router.id, subnet.id)
+        lambda: neutron_utils.cleanup_router(test_source_session, router.id, subnet.id)
     )
 
     lb = _create_test_load_balancer(test_source_session, subnet.id, network.id)
@@ -421,7 +381,7 @@ def test_migrate_load_balancer_with_floating_ip_and_router(
         )
     )
 
-    floating_ip = _create_floating_ip_for_load_balancer(
+    floating_ip = neutron_utils.create_test_floating_ip(
         test_source_session, external_network.id, lb.vip_port_id, external_subnet.id
     )
     request.addfinalizer(
@@ -510,7 +470,7 @@ def test_migrate_load_balancer_with_floating_ip_and_router(
         )
     )
     request.addfinalizer(
-        lambda: _cleanup_router(
+        lambda: neutron_utils.cleanup_router(
             test_destination_session, dest_router_id, dest_subnet_id
         )
     )

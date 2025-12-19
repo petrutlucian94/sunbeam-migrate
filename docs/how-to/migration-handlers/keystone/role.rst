@@ -6,7 +6,7 @@ Roles would usually be migrated as user :ref:`dependencies<resource_hierarchies_
 
 If the deployments use non-standard role names, consider recreating the roles
 manually and then use the ``register-external`` command so that the new users
-will use the manually created roles.
+will have the manually created roles.
 
 Example
 -------

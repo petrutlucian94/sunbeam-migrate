@@ -12,6 +12,12 @@ Other subnets connected to the router can be automatically covered using
   Consider passing ``--include-dependencies`` if the multi-tenant mode
   is enabled in order to automatically recreate the Keystone resources.
 
+Use the ``preserve_router_ip`` setting to specify whether the exact same router
+IP should be used.
+
+Example
+-------
+
 .. code-block:: none
 
   sunbeam-migrate start \
