@@ -29,7 +29,7 @@ A tool that facilitates the migration from Charmed Openstack to Sunbeam.
   * We have a similar situation with Barbican secrets and secret containers,
     where we aren't normally allowed to retrieve secrets owned by other projects.
 
-## Functional tests
+## Integration tests
 
 `sunbeam_migrate/tests/integration` contains integration tests that exercise every supported
 migration handler.

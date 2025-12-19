@@ -15,12 +15,13 @@ def _create_floating_ip(session, network, subnet):
 
 
 def _check_migrated_floating_ip(
-    source_floating_ip, dest_floating_ip, dest_network_id, dest_subnet_id
+    test_config, source_floating_ip, dest_floating_ip, dest_network_id, dest_subnet_id
 ):
     fields = [
         "description",
-        "floating_ip_address",
     ]
+    if test_config.preserve_port_floating_ip_address:
+        fields.append("floating_ip_address")
     for field in fields:
         assert getattr(source_floating_ip, field) == getattr(dest_floating_ip, field), (
             f"{field} attribute mismatch"
@@ -41,6 +42,7 @@ def _check_migrated_floating_ip(
 
 def test_migrate_floating_ip_with_dependencies_and_cleanup(
     request,
+    test_config,
     test_config_path,
     test_credentials,
     test_source_session,
@@ -96,16 +98,18 @@ def test_migrate_floating_ip_with_dependencies_and_cleanup(
     request.addfinalizer(
         lambda: test_destination_session.network.delete_subnet(dest_subnet_id)
     )
-    dest_floating_ip = test_destination_session.network.find_ip(
-        floating_ip.floating_ip_address
+    dest_floating_ip_id = test_utils.get_destination_resource_id(
+        test_config_path, "floating-ip", floating_ip.id
     )
-    assert dest_floating_ip, "couldn't find migrated floating IP"
     request.addfinalizer(
-        lambda: test_destination_session.network.delete_ip(dest_floating_ip.id)
+        lambda: test_destination_session.network.delete_ip(
+            dest_floating_ip_id, ignore_missing=True
+        )
     )
+    dest_floating_ip = test_destination_session.network.get_ip(dest_floating_ip_id)
 
     _check_migrated_floating_ip(
-        floating_ip, dest_floating_ip, dest_network_id, dest_subnet_id
+        test_config, floating_ip, dest_floating_ip, dest_network_id, dest_subnet_id
     )
 
     assert not test_source_session.network.find_ip(floating_ip.id), (
@@ -115,6 +119,7 @@ def test_migrate_floating_ip_with_dependencies_and_cleanup(
 
 def test_migrate_floating_ip_batch_with_filter(
     request,
+    test_config,
     test_config_path,
     test_credentials,
     test_source_session,
@@ -169,27 +174,21 @@ def test_migrate_floating_ip_batch_with_filter(
         )
 
         request.addfinalizer(
-            lambda net_id=dest_network_id: (
-                test_destination_session.network.delete_network(net_id)
-            )
+            lambda: test_destination_session.network.delete_network(dest_network_id)
         )
         request.addfinalizer(
-            lambda subnet_id=dest_subnet_id: (
-                test_destination_session.network.delete_subnet(subnet_id)
-            )
+            lambda: test_destination_session.network.delete_subnet(dest_subnet_id)
         )
-        dest_floating_ip = test_destination_session.network.find_ip(
-            floating_ip.floating_ip_address
+        dest_floating_ip_id = test_utils.get_destination_resource_id(
+            test_config_path, "floating-ip", floating_ip.id
         )
-        assert dest_floating_ip, "couldn't find migrated floating IP"
+        dest_floating_ip = test_destination_session.network.get_ip(dest_floating_ip_id)
         request.addfinalizer(
-            lambda fip_id=dest_floating_ip.id: (
-                test_destination_session.network.delete_ip(fip_id)
-            )
+            lambda: test_destination_session.network.delete_ip(dest_floating_ip)
         )
 
         _check_migrated_floating_ip(
-            floating_ip, dest_floating_ip, dest_network_id, dest_subnet_id
+            test_config, floating_ip, dest_floating_ip, dest_network_id, dest_subnet_id
         )
 
         assert not test_source_session.network.find_ip(floating_ip.id), (

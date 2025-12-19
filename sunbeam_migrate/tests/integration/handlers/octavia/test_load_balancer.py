@@ -404,8 +404,10 @@ def test_migrate_load_balancer_with_floating_ip_and_router(
     assert dest_lb, "couldn't find migrated load balancer"
     _check_migrated_load_balancer(lb, dest_lb)
 
-    dest_fip = test_destination_session.network.find_ip(floating_ip.floating_ip_address)
-    assert dest_fip, "couldn't find migrated floating IP"
+    dest_floating_ip_id = test_utils.get_destination_resource_id(
+        test_config_path, "floating-ip", floating_ip.id
+    )
+    dest_fip = test_destination_session.network.get_ip(dest_floating_ip_id)
     assert dest_fip.port_id == dest_lb.vip_port_id, "floating IP not bound to VIP port"
 
     dest_network_id = test_utils.get_destination_resource_id(
@@ -470,17 +472,17 @@ def test_migrate_load_balancer_with_floating_ip_and_router(
         )
     )
     request.addfinalizer(
+        lambda: test_destination_session.network.delete_ip(
+            dest_floating_ip_id, ignore_missing=True
+        )
+    )
+    request.addfinalizer(
         lambda: neutron_utils.cleanup_router(
             test_destination_session, dest_router_id, dest_subnet_id
         )
     )
     request.addfinalizer(
         lambda: _cleanup_destination_load_balancer(test_destination_session, dest_lb.id)
-    )
-    request.addfinalizer(
-        lambda: test_destination_session.network.delete_ip(
-            dest_fip.id, ignore_missing=True
-        )
     )
 
 
