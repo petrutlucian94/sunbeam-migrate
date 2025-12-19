@@ -12,7 +12,6 @@ A tool that facilitates the migration from Charmed Openstack to Sunbeam.
 * Add new resource migration handlers.
 * Implement additional volume migration mechanisms. See the volume migration
   guide for more details.
-* Implement manager unit tests
 * Instead of dry runs, have migration plans similar to Terraform plans. The user could then
   see the resources that are going to be migrated, trigger the migration plan and then check
   the migration status for the specified plan.

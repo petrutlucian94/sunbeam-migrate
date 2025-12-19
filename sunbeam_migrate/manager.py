@@ -85,6 +85,10 @@ class SunbeamMigrationManager:
             for associated_migration in associated_migrations:
                 self.cleanup_migration_source(associated_migration)
 
+            # TODO: consider cleaning up member resources. At the moment,
+            # it is assumed that cleaning up the parent resource will also
+            # remove contained resources.
+
         migration.status = constants.STATUS_COMPLETED
         migration.save()
         return migration
@@ -467,8 +471,8 @@ class SunbeamMigrationManager:
                     resource.source_id,
                 )
                 self._perform_individual_migration_dry_run(
-                    resource_type,
-                    resource_id,
+                    resource.resource_type,
+                    resource.source_id,
                     cleanup_source=cleanup_source,
                     include_dependencies=include_dependencies,
                     include_members=include_members,
