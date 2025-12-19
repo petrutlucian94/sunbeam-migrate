@@ -25,47 +25,25 @@ class SunbeamMigrationManager:
         self,
         resource_type: str,
         resource_id: str,
-        dry_run: bool = False,
         cleanup_source: bool = False,
         include_dependencies: bool = False,
         include_members: bool = False,
-    ) -> models.Migration | None:
+        dry_run: bool = False,
+    ) -> models.Migration:
         """Migrate the specified resource."""
+        if dry_run:
+            return self._perform_individual_migration_dry_run(
+                resource_type,
+                resource_id,
+                cleanup_source=cleanup_source,
+                include_dependencies=include_dependencies,
+                include_members=include_members,
+            )
+
         handler = self._get_migration_handler(resource_type)
 
         if not resource_id:
             raise exception.InvalidInput("No resource id specified.")
-
-        if dry_run:
-            LOG.info(
-                "DRY-RUN: %s migration, resource id: %s, cleanup source: %s",
-                resource_type,
-                resource_id,
-                cleanup_source,
-            )
-            if include_dependencies:
-                associated_resources = self._get_associated_resources(
-                    resource_type, resource_id
-                )
-                if associated_resources["pending"]:
-                    for resource in associated_resources["pending"]:
-                        LOG.info(
-                            "DRY-RUN: Would migrate associated resource with type: "
-                            "%s, id: %s",
-                            resource.resource_type,
-                            resource.source_id,
-                        )
-            if include_members:
-                member_resources = handler.get_member_resources(resource_id)
-                if member_resources:
-                    for resource in member_resources:
-                        LOG.info(
-                            "DRY-RUN: Would migrate member resource with type: "
-                            "%s, id: %s",
-                            resource.resource_type,
-                            resource.source_id,
-                        )
-            return None
 
         migration, associated_migrations = self._migrate_parent_resource(
             handler=handler,
@@ -101,6 +79,7 @@ class SunbeamMigrationManager:
         if cleanup_source:
             migration.status = constants.STATUS_PENDING_CLEANUP
             migration.save()
+
             self.cleanup_migration_source(migration)
 
             for associated_migration in associated_migrations:
@@ -123,6 +102,21 @@ class SunbeamMigrationManager:
         Returns a migration object for the requested resource and a list of
         associated (dependency) migrations that can be cleaned up.
         """
+        existing = db_api.get_migrations(
+            source_id=resource_id,
+            resource_type=resource_type,
+        )
+        if existing and existing[0].status in constants.LIST_STATUS_MIGRATED:
+            LOG.info(
+                "Already migrated %s resource: %s (migration %s, status %s) "
+                "skipping duplicate migration",
+                resource_type,
+                resource_id,
+                existing[0].uuid,
+                existing[0].status,
+            )
+            return existing[0], []
+
         LOG.info("Initiating %s migration, resource id: %s", resource_type, resource_id)
 
         migration = models.Migration(
@@ -191,19 +185,10 @@ class SunbeamMigrationManager:
                     associated_migration = self.perform_individual_migration(
                         associated_resource.resource_type,
                         associated_resource.source_id,
-                        dry_run=False,
                         include_dependencies=include_dependencies,
                         include_members=include_members,
                     )
                     # Indirect dependencies will not be included.
-                    if associated_migration is None:
-                        raise exception.SunbeamMigrateException(
-                            "Failed to migrate associated resource %s %s"
-                            % (
-                                associated_resource.resource_type,
-                                associated_resource.source_id,
-                            )
-                        )
                     if associated_resource.should_cleanup:
                         LOG.debug(
                             "Adding associated resource to the cleanup list: %s",
@@ -301,15 +286,13 @@ class SunbeamMigrationManager:
                 migrated_member = self.perform_individual_migration(
                     member_resource.resource_type,
                     member_resource.source_id,
-                    dry_run=False,
                     cleanup_source=cleanup_source,
                     include_dependencies=include_dependencies,
                     include_members=include_members,
                 )
-                if migrated_member:
-                    migrated_member_resources.append(
-                        self._get_migrated_resource(migrated_member)
-                    )
+                migrated_member_resources.append(
+                    self._get_migrated_resource(migrated_member)
+                )
             except Exception as ex:
                 LOG.error(
                     "Failed to migrate member resource %s %s: %r",
@@ -377,10 +360,10 @@ class SunbeamMigrationManager:
             self.perform_individual_migration(
                 resource_type,
                 resource_id,
-                dry_run=dry_run,
                 cleanup_source=cleanup_source,
                 include_dependencies=include_dependencies,
                 include_members=include_members,
+                dry_run=dry_run,
             )
 
     def cleanup_migration_source(self, migration: models.Migration):
@@ -416,3 +399,80 @@ class SunbeamMigrationManager:
             source_id=str(migration.source_id),
             destination_id=str(migration.destination_id),
         )
+
+    def _perform_individual_migration_dry_run(
+        self,
+        resource_type: str,
+        resource_id: str,
+        cleanup_source: bool = False,
+        include_dependencies: bool = False,
+        include_members: bool = False,
+    ) -> models.Migration:
+        handler = self._get_migration_handler(resource_type)
+
+        if not resource_id:
+            raise exception.InvalidInput("No resource id specified.")
+
+        existing = db_api.get_migrations(
+            source_id=resource_id,
+            resource_type=resource_type,
+        )
+        if existing and existing[0].status in constants.LIST_STATUS_MIGRATED:
+            LOG.info(
+                "Already migrated %s resource: %s (migration %s, status %s) "
+                "skipping duplicate migration",
+                resource_type,
+                resource_id,
+                existing[0].uuid,
+                existing[0].status,
+            )
+            return existing[0]
+
+        LOG.info(
+            "DRY-RUN: migrating %s resource: %s, cleanup source: %s",
+            resource_type,
+            resource_id,
+            cleanup_source,
+        )
+        if include_dependencies:
+            associated_resources = self._get_associated_resources(
+                resource_type, resource_id
+            )
+            for resource in associated_resources["pending"]:
+                LOG.info(
+                    "DRY-RUN: migrating associated %s resource: %s.",
+                    resource.resource_type,
+                    resource.source_id,
+                )
+                self._perform_individual_migration_dry_run(
+                    resource.resource_type,
+                    resource.source_id,
+                    cleanup_source=cleanup_source,
+                    include_dependencies=include_dependencies,
+                    include_members=include_members,
+                )
+            for resource in associated_resources["migrated"]:
+                LOG.info(
+                    "DRY-RUN: already migrated associated %s resource: %s -> %s",
+                    resource.resource_type,
+                    resource.source_id,
+                    resource.destination_id,  # type: ignore [attr-defined]
+                )
+        if include_members:
+            member_resources = handler.get_member_resources(resource_id)
+            for resource in member_resources:
+                LOG.info(
+                    "DRY-RUN: migrating member %s resource: %s.",
+                    resource.resource_type,
+                    resource.source_id,
+                )
+                self._perform_individual_migration_dry_run(
+                    resource_type,
+                    resource_id,
+                    cleanup_source=cleanup_source,
+                    include_dependencies=include_dependencies,
+                    include_members=include_members,
+                )
+
+        # Return an empty migration.
+        return models.Migration()

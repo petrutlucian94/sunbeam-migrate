@@ -17,7 +17,6 @@ A tool that facilitates the migration from Charmed Openstack to Sunbeam.
   see the resources that are going to be migrated, trigger the migration plan and then check
   the migration status for the specified plan.
   The resource dependencies could be modeled through a tree.
-* Propagate the dry run to linked resources.
 * Cross-tenant keypair and secret migrations
   * The keypairs do not have an unique ID. Cross-tenant requests must include
     the keypair name and the project/user ID, even get/list.
