@@ -1,14 +1,10 @@
 Vault Secret Migration
 ======================
 
-Barbican Secrets
-----------------
-This guide refers specifically to migrating secrets stored in Vault between two different deployments: the source Vault used by Charmed Openstack and the destination Vault deployed as vault-k8s within Sunbeam. The Barbican secrets migration process is separate and those secrets are handled by the `sunbeam-migrate` tool, with the Barbican secrets migration handler.
-
 Overview
 --------
 
-This guide explains how to migrate secrets between two Vault deployments (Charmed Openstack and Sunbeam) using the Vault CLI and custom scripts. 
+This guide explains how to migrate secrets between two Vault deployments (Charmed Openstack and Sunbeam) using the Vault CLI and a helper script.
 
 The migration process involves:
 
@@ -16,6 +12,10 @@ The migration process involves:
 2. Configuring access to the destination Vault (vault-k8s from Sunbeam)
 3. Exporting secrets from the source Vault
 4. Importing secrets into the destination Vault
+
+.. note::
+
+   For Barbican secrets, see the :ref:`migration handler<barbican_secret_ref>` page.
 
 Prerequisites
 -------------

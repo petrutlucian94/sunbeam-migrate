@@ -8,3 +8,4 @@ the ``sunbeam-migrate`` tool.
    :maxdepth: 1
 
    get-started-with-sunbeam-migrate
+   vault-secret-migration

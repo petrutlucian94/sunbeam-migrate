@@ -1,3 +1,5 @@
+.. _barbican_secret_ref:
+
 Migrating secrets
 =================
 

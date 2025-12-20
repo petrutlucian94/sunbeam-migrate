@@ -27,7 +27,7 @@ define resource relations and which batch migration filters they accept:
   |   Manila  |      share-type     |           -           |                           -                            |           -            |
   |  Neutron  |     floating-ip     |           -           |            network, subnet, router, project            |       project_id       |
   |  Neutron  |       network       |         subnet        |                        project                         |       project_id       |
-  |  Neutron  |         port        |           -           |        network, subnet, security-group, project        |           -            |
+  |  Neutron  |         port        |           -           | network, subnet, security-group, floating-ip, project  |           -            |
   |  Neutron  |        router       |         subnet        |                network, subnet, project                |       project_id       |
   |  Neutron  |    security-group   |  security-group-rule  |                        project                         |       project_id       |
   |  Neutron  | security-group-rule |           -           |                security-group, project                 |       project_id       |

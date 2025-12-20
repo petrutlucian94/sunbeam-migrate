@@ -4,7 +4,7 @@
 
 - `sunbeam-migrate` is a command-line tool that facilitates the migration of
   resources between OpenStack clouds (e.g. images, networks, volumes, etc.).
-- README.md provides a few usage examples.
+- The documentation under `docs/` provides usage examples.
 - `sunbeam-migrate start` can be used to migrate a single resource, specifying
   the resource ID and resource type.
 - `sunbeam-migrate start-batch` migrates all the resources that match a given set
@@ -32,7 +32,7 @@
     use SQLAlchemy directly.
 - The `handlers` folder contains resource migration handlers, grouped by service type.
   Format: `handlers/<service_name>/<resource_type>.py`.
-- handlers/base.py defines the handler interface and includes common helper methods.
+- `handlers/base.py` defines the handler interface and includes common helper methods.
   - An OpenStack SDK session for the source cloud can be accessed throgh the 
     `_source_session` handler property. A similar property exists for the
     destination cloud.
@@ -45,15 +45,10 @@
 - Pydantic is used to define configuration options, which reside in config.py
 - The manager calls the `get_associated_resources` handler method to obtain the list of
   dependent resources and migrates them before initating the requested migration.
-  `perform_individual_migraiton` will receive a list of migrated resource tuples
+  `perform_individual_migraiton` will receive a list of migrated resource objects
   via the `migrated_associated_resources` argument.
   - The migration handler can use the `_get_associated_resource_destination_id`
     helper to retrieve the corresponding id for a migrated dependency.
-  - For example, if an instance needs volume `source-volume-id`, the
-   `migrated_associated_resources` argument will look like this:
-   `[("volume", "source-volume-id", "destination-volume-id")]`,
-   where `destination-volume-id` is the uuid of the migrated volume reported by the
-   destination cloud.
 
 ## Integration tests
   - `tests/integration` contains integration tests for each migration handler.
@@ -70,6 +65,9 @@
   - Pytest finalizers are used to remove test resources.
   - The integration tests use the temporary test credentials to create resources
     and then migrate them. Individual migrations receive the source resource IDs.
+    - If multi-tenant mode is enabled, a separate set of credentials will be used
+      to trigger the migration. This is transparently handled by the
+      `test_requester_*` and `test_owner_*` fixtures.
   - The tests perform individual as well as batch migrations, often filtering
     resources by id or by the owner project and passing `--cleanup-source`.
   - If the migration handler does not support resource filters, batch migrations
