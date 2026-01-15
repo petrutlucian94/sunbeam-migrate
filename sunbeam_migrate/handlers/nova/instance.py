@@ -330,7 +330,6 @@ class InstanceHandler(base.BaseMigrationHandler):
 
         # Optional fields
         optional_fields = [
-            "availability_zone",
             "metadata",
             "user_data",
             "config_drive",
