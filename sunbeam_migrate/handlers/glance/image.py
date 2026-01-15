@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import hashlib
+import logging
 
 from sunbeam_migrate import config, exception
 from sunbeam_migrate.handlers import base
 
 CONF = config.get_config()
+LOG = logging.getLogger()
 
 
 class ImageHandler(base.BaseMigrationHandler):
@@ -138,8 +140,13 @@ class ImageHandler(base.BaseMigrationHandler):
 
         # Refresh the image to get all the information, including checksums.
         destination_image = self._destination_session.get_image(destination_image.id)
-        if destination_image.checksum != source_image.checksum:
-            raise exception.Invalid("Checksum mismatch in transferred image.")
+        if not destination_image.checksum or not source_image.checksum:
+            LOG.warning(
+                "The Glance image doesn’t contain a checksum, skipping validation."
+            )
+        else:
+            if destination_image.checksum != source_image.checksum:
+                raise exception.Invalid("Checksum mismatch in transferred image.")
 
         return destination_image.id
 
@@ -152,7 +159,7 @@ class ImageHandler(base.BaseMigrationHandler):
             md5.update(chunk)
             yield chunk
 
-        if md5.hexdigest() != response.headers["Content-MD5"]:
+        if md5.hexdigest() != response.headers["Content-MD5"] and source_image.checksum:
             raise exception.Invalid("Checksum mismatch in downloaded image.")
 
     def get_source_resource_ids(self, resource_filters: dict[str, str]) -> list[str]:
