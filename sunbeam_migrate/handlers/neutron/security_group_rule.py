@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 
 
 class SecurityGroupRuleHandler(base.BaseMigrationHandler):
-    """Handle Barbican secret container migrations."""
+    """Handle Neutron security group rules migrations."""
 
     def get_service_type(self) -> str:
         """Get the service type for this type of resource."""

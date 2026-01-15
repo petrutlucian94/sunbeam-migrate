@@ -8,7 +8,7 @@ CONF = config.get_config()
 
 
 class NetworkHandler(base.BaseMigrationHandler):
-    """Handle Barbican secret container migrations."""
+    """Handle Neutron network migrations."""
 
     def get_service_type(self) -> str:
         """Get the service type for this type of resource."""
