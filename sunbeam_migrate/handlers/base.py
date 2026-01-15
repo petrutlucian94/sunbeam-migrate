@@ -221,6 +221,7 @@ class BaseMigrationHandler(abc.ABC):
                 "Multi-tenant mode disabled, identity resources will not "
                 "be added as dependencies."
             )
+            return
         if project_id:
             associated_resources.append(
                 Resource(resource_type="project", source_id=project_id)
