@@ -54,6 +54,16 @@ Openstack credentials for the source and destination clouds. Here is an example:
         username: admin
       cacert: /home/ubuntu/sunbeam-ca/sunbeam-destination-ca.pem
 
+Cloud configurations
+--------------------
+
+We are uploading the Cinder volumes to Glance in order to retrieve the data.
+On the source cloud, Cinder must be configured with `enable_force_upload = True`
+in order to upload attached volumes.
+
+As we are uploading the Cinder volumes and Nova instance root disks to Glance,
+the Glance services on both clouds must have the `image_size_cap` config option
+set to a high enough value to accommodate these migrations (default value: 1 TB).
 
 Options
 -------
