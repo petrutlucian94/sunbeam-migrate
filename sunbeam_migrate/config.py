@@ -61,6 +61,12 @@ class SunbeamMigrateConfig(BaseModel):
     preserve_volume_availability_zone: bool = False
     preserve_instance_availability_zone: bool = False
     preserve_load_balancer_availability_zone: bool = False
+    # Preserve the network availability zone hints when migrating networks.
+    # Defaults to "false" for increased compatibility.
+    preserve_network_availability_zone: bool = False
+    # Preserve the router availability zone hints when migrating routers.
+    # Defaults to "false" for increased compatibility.
+    preserve_router_availability_zone: bool = False
     # Preserve the Manila share type.
     preserve_share_type: bool = True
     # Whether to recreate share access rules when migrating shares.

@@ -84,7 +84,6 @@ class NetworkHandler(base.BaseMigrationHandler):
             raise exception.NotFound(f"Network not found: {resource_id}")
 
         fields = [
-            "availability_zone_hints",
             "description",
             "dns_domain",
             "is_admin_state_up",
@@ -98,6 +97,8 @@ class NetworkHandler(base.BaseMigrationHandler):
             "provider_physical_network",
             "segments",
         ]
+        if CONF.preserve_network_availability_zone:
+            fields.append("availability_zone_hints")
         if CONF.preserve_network_segmentation_id:
             fields.append("provider_segmentation_id")
         kwargs = {}

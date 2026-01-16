@@ -119,7 +119,6 @@ class RouterHandler(base.BaseMigrationHandler):
         )
 
         fields = [
-            "availability_zone_hints",
             "description",
             "flavor_id",
             "is_admin_state_up",
@@ -127,6 +126,8 @@ class RouterHandler(base.BaseMigrationHandler):
             "is_ha",
             "name",
         ]
+        if CONF.preserve_router_availability_zone:
+            fields.append("availability_zone_hints")
 
         kwargs = {}
         for field in fields:
